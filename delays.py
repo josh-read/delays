@@ -20,6 +20,8 @@ class DelayManager:
 
     def find_delay(self, event, timebase1, timebase2):
         graph_search_result = graph_search(self.delay_adjacency_dict[event], timebase1, timebase2)
+        if len(graph_search_result) == 0:
+            raise ValueError
         try:
             (_, delay), = graph_search_result
             return delay
