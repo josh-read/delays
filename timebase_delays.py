@@ -50,24 +50,3 @@ def place_event_on_timeline(delay_manager, timebase_delays, event, current_timel
     information_delay = delay_manager.find_delay(event, current_timeline, target_timeline)
     timebase_delay = timebase_delays.find_delay(current_timeline, target_timeline)
     return time + information_delay + timebase_delay
-
-
-def main():
-    dm = DelayManager()
-    dm.add('e1', 'tb1', 'tb2', 100)
-    dm.add('e1', 'tb2', 'tb3', 25)
-    dm.add('e1', 'tb4', 'tb3', 250)
-    dm.add('e1', 'tb1', 'tb4', 70)
-    dm.add('e2', 'tb1', 'tb4', 140)
-
-    tbd = TimebaseDelays(dm)
-    tbd.add_event('e1', 'tb1', 0)
-    tbd.add_event('e1', 'tb4', 600)
-    print(tbd.build_timebase_adj_list())
-    print(tbd.timebase_adjacency_dict)
-
-    print(place_event_on_timeline(dm, tbd, 'e2', 'tb1', 40, 'tb4'))
-
-
-if __name__ == '__main__':
-    main()
