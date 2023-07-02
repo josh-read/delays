@@ -39,18 +39,3 @@ class DelayManager:
             delays = [delay for _, delay in graph_search_result]
             print(f'Taking the average delay from {delays}.')
             return mean(delays)
-
-
-def main():
-    dm = DelayManager()
-    dm.add('e1', 'tb1', 'tb2', 100)
-    dm.add('e1', 'tb2', 'tb3', 25)
-    dm.add('e1', 'tb4', 'tb3', 250)
-    dm.add('e1', 'tb1', 'tb4', 70)
-    dm.add('e2', 'tb1', 'tb4', 140)
-    pprint(dm.delay_adjacency_dict)
-    print(dm.find_delay('e1', 'tb1', 'tb4'))
-
-
-if __name__ == '__main__':
-    main()
