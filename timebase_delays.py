@@ -1,6 +1,7 @@
 import itertools
 from collections import defaultdict
-from delays import DelayManager, graph_search
+from delays import DelayManager
+from graph import graph_search
 from pprint import pprint
 from statistics import mean
 
