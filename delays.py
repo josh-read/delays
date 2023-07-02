@@ -8,15 +8,20 @@ from graph import graph_search
 class DelayManager:
 
     def __init__(self):
-        self.delays = []
         self.delay_adjacency_dict = defaultdict(lambda: defaultdict(dict))
+
+    @classmethod
+    def from_list(cls, delay_list):
+        delay_manager = cls()
+        for row in delay_list:
+            delay_manager.add(*row)
+        return delay_manager
 
     def add(self, event, timebase1, timebase2, delay):
         """Getting the sign right on the delay is vital here. Should read like:
 
         information from event on timebase1 occurs delay later on timebase 2
         t2 - t1 = delay"""
-        self.delays.append((event, timebase1, timebase2, delay))
         self.delay_adjacency_dict[event][timebase1].update({timebase2: delay})
         self.delay_adjacency_dict[event][timebase2].update({timebase1: -delay})
 
