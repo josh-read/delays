@@ -13,6 +13,13 @@ class TimebaseDelays:
         self.timebase_adjacency_dict = defaultdict(dict)
         self.delay_manager = delay_manager
 
+    @classmethod
+    def from_list(cls, delay_manager, event_list):
+        timebase_delays = cls(delay_manager)
+        for row in event_list:
+            timebase_delays.add_event(*row)
+        return timebase_delays
+
     def add_event(self, event, timebase, time):
         """Assumes for now that all delays are added ahead of time."""
         self.events[event][timebase] = time

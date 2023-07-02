@@ -8,9 +8,10 @@ def test_place_event_on_timeline():
         ('e2', 'tb1', 'tb2', 100),
     ])
 
-    tbd = TimebaseDelays(dm)
-    tbd.add_event('e1', 'tb1', 25)
-    tbd.add_event('e1', 'tb2', 1075)
+    tbd = TimebaseDelays.from_list(dm, [
+        ('e1', 'tb1', 25),
+        ('e1', 'tb2', 1075),
+    ])
     tbd.build_timebase_adj_list()
 
     assert place_event_on_timeline(dm, tbd, 'e2', 'tb2', 1575, 'tb1') == 475
