@@ -1,12 +1,6 @@
-use std::cmp::Ordering;
-use petgraph::graphmap::DiGraphMap;
-use petgraph::dot::Dot;
 use petgraph::algo;
-use petgraph::graph::DiGraph;
-use std::hash::{Hash, Hasher};
-use std::collections::{HashMap, HashSet};
-use petgraph::data::DataMap;
-use petgraph::graph::{Node, NodeIndex};
+use petgraph::graph::{DiGraph, NodeIndex};
+use std::collections::HashMap;
 
 
 #[derive(Debug)]
@@ -78,8 +72,7 @@ impl EventGraph {
             let mut sum = 0.0;
             let first_node_weight = self.graph.node_weight(path[0]).unwrap().unwrap_or(0.0);
             let last_node_weight = self.graph.node_weight(path[path.len() - 1]).unwrap().unwrap_or(0.0);
-            sum += last_node_weight - first_node_weight;
-            // for nodes in path.windows(2) {
+            // sum += last_node_weight - first_node_weight;
             for i in 0..path.len()-1 {
                 let node_1 = path[i];
                 let node_2 = path[i+1];
@@ -98,19 +91,50 @@ impl EventGraph {
     }
 }
 
-fn main() {
-    // create event graph
-    let mut event_graph = EventGraph::new();
-    // add events
-    event_graph.add_event("experiment", "current start", 0.0);
-    event_graph.add_event("scope", "current start", 2500.0);
-    event_graph.add_event("scope", "aux out", 30.0);
-    event_graph.add_event("pdv scope", "movement start", 2700.0);
-    // add delays
-    event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0);
-    event_graph.add_delay("scope", "aux out", "pdv scope", "t0", 100.0);
-    event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0);
+#[cfg(test)]
+mod tests {
+    use crate::EventGraph;
+    #[test]
+    fn place_event() {
+        // create event graph
+        let mut event_graph = EventGraph::new();
+        // add events
+        event_graph.add_event("experiment", "current start", 0.0);
+        event_graph.add_event("scope", "current start", 2500.0);
+        event_graph.add_event("scope", "aux out", 30.0);
+        event_graph.add_event("pdv scope", "movement start", 2700.0);
+        // add delays
+        event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0);
+        event_graph.add_delay("scope", "aux out", "pdv scope", "t0", 100.0);
+        event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0);
 
-    let delay = event_graph.get_delay("experiment", "t0", "experiment", "movement start").unwrap();
-    println!("{:?}", delay)
+        let delay = event_graph.get_delay("experiment", "t0", "experiment", "movement start").unwrap();
+        assert_eq!(delay, 1450.0);
+    }
+
+    #[test]
+    fn calculate_delay() {
+        // create event graph
+        let mut event_graph = EventGraph::new();
+        // add events
+        event_graph.add_event("experiment", "current start", 0.0);
+        event_graph.add_event("experiment", "movement start", 1450.0);
+        event_graph.add_event("scope", "current start", 2500.0);
+        event_graph.add_event("scope", "aux out", 30.0);
+        event_graph.add_event("pdv scope", "movement start", 2700.0);
+        // add delays
+        event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0);
+        event_graph.add_delay("scope", "aux out", "pdv scope", "t0", 100.0);
+        // event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0);
+
+        let start_node_index = event_graph.node_map.get(&(String::from("experiment"), String::from("movement start"))).unwrap();
+        let start_node_weight = event_graph.graph.node_weight(*start_node_index).unwrap().unwrap();
+        let delay = event_graph.get_delay("experiment", "movement start", "pdv scope", "movement start").unwrap();
+        assert_eq!(delay - start_node_weight, 150.0);
+    }
+}
+
+
+fn main() {
+    println!("Hello, world!")
 }
