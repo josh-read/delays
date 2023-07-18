@@ -63,34 +63,38 @@ impl EventGraph {
         self.graph.add_edge(*node_index_2, *node_index_1, -delay);
     }
 
-    fn get_delay(&self, timebase_1_name: &str, event_1_name: &str, timebase_2_name: &str, event_2_name: &str) -> f64 {
+    fn get_delay(&self, timebase_1_name: &str, event_1_name: &str, timebase_2_name: &str, event_2_name: &str) -> Result<f64, ()> {
         // generate keys to specify path
         let start_key = (String::from(timebase_1_name), String::from(event_1_name));
         let finish_key = (String::from(timebase_2_name), String::from(event_2_name));
         // lookup corresponding nodes
         let start_node = self.node_map.get(&start_key).unwrap();
         let finish_node = self.node_map.get(&finish_key).unwrap();
-        // find path
-        let ways = algo::all_simple_paths::<Vec<_>, _>(&self.graph, *start_node, *finish_node, 0, None).collect::<Vec<_>>();
-        println!("{:?}", ways);
-
-        let mut sum = 0.0;
-        for path in ways {
-            for nodes in path.windows(2) {
-                let node_1 = nodes[0];
-                let node_2 = nodes[1];
-                let node_1_weight = self.graph.node_weight(node_1).unwrap().unwrap_or(0.0);
-                let node_2_weight = self.graph.node_weight(node_2).unwrap().unwrap_or(0.0);
-                // println!("node diff = {:?} - {:?}", node_2_weight, node_1_weight);
-                sum += node_2_weight - node_1_weight;
+        // find all possible paths from start node to finish node
+        let paths = algo::all_simple_paths::<Vec<_>, _>(&self.graph, *start_node, *finish_node, 0, None).collect::<Vec<_>>();
+        // add up the edge weights and node weight differences to get the total delay of the path
+        let mut path_sums = Vec::new();
+        for path in paths {
+            let mut sum = 0.0;
+            let first_node_weight = self.graph.node_weight(path[0]).unwrap().unwrap_or(0.0);
+            let last_node_weight = self.graph.node_weight(path[path.len() - 1]).unwrap().unwrap_or(0.0);
+            sum += last_node_weight - first_node_weight;
+            // for nodes in path.windows(2) {
+            for i in 0..path.len()-1 {
+                let node_1 = path[i];
+                let node_2 = path[i+1];
                 let edge = self.graph.find_edge(node_1, node_2).unwrap();
                 let edge_weight = self.graph.edge_weight(edge).unwrap();
-                // println!("edge weight = {:?}", edge_weight);
                 sum += *edge_weight;
-                // println!("sum = {:?}", sum);
             };
+            path_sums.push(sum)
         };
-        sum
+        // if there is more than one path, return an error
+        if path_sums.len() == 1 {
+            Ok(path_sums[0])
+        } else {
+            Err(())
+        }
     }
 }
 
@@ -107,6 +111,6 @@ fn main() {
     event_graph.add_delay("scope", "aux out", "pdv scope", "t0", 100.0);
     event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0);
 
-    let delay = event_graph.get_delay("experiment", "t0", "experiment", "movement start");
+    let delay = event_graph.get_delay("experiment", "t0", "experiment", "movement start").unwrap();
     println!("{:?}", delay)
 }
