@@ -1,3 +1,112 @@
+use std::cmp::Ordering;
+use petgraph::graphmap::DiGraphMap;
+use petgraph::dot::Dot;
+use petgraph::algo;
+use petgraph::graph::DiGraph;
+use std::hash::{Hash, Hasher};
+use std::collections::{HashMap, HashSet};
+use petgraph::data::DataMap;
+use petgraph::graph::{Node, NodeIndex};
+
+
+#[derive(Debug)]
+struct EventGraph {
+    node_map: HashMap<(String, String), NodeIndex>,
+    graph: DiGraph<Option<f64>, f64>,
+}
+
+impl EventGraph {
+
+    fn new() -> Self {
+        let mut node_map: HashMap<(String, String), NodeIndex> = HashMap::new();
+        let mut graph = DiGraph::<Option<f64>, f64>::new();
+        Self {node_map, graph}
+    }
+
+    fn _add_event(&mut self, timebase_name: &str, event_name: &str, time: Option<f64>) {
+        let new_node = self.graph.add_node(time);
+        self.node_map.insert((String::from(timebase_name), String::from(event_name)), new_node);
+    }
+
+    fn add_event(&mut self, timebase_name: &str, event_name: &str, time: f64) {
+        if !self.node_map.contains_key(&(String::from(timebase_name), String::from("t0"))) {
+            // add a t0 node if there isn't one already
+            self._add_event(timebase_name, "t0", Some(0.0));
+        }
+        // add the new event
+        self._add_event(timebase_name, event_name, Some(time));
+        // link to t0
+        let t0_node_index = self.node_map.get(&(String::from(timebase_name), String::from("t0"))).unwrap();
+        let new_node_index = self.node_map.get(&(String::from(timebase_name), String::from(event_name))).unwrap();
+        self.graph.add_edge(*t0_node_index, *new_node_index, 0.0);
+        self.graph.add_edge(*new_node_index, *t0_node_index, 0.0);
+    }
+
+    fn add_delay(&mut self, timebase_1_name: &str, event_1_name: &str, timebase_2_name: &str, event_2_name: &str, delay: f64) {
+        // create event nodes if they do not already exist
+        let key_1 = (String::from(timebase_1_name), String::from(event_1_name));
+        if !self.node_map.contains_key(&key_1) {
+            self._add_event(timebase_1_name, event_1_name, None)
+        }
+
+        let key_2 = (String::from(timebase_2_name), String::from(event_2_name));
+        if !self.node_map.contains_key(&key_2) {
+            self._add_event(timebase_2_name, event_2_name, None)
+        }
+
+        // recover the node_indices
+        let node_index_1 = self.node_map.get(&key_1).unwrap();
+        let node_index_2 = self.node_map.get(&key_2).unwrap();
+
+        // then add the delays as edges
+        self.graph.add_edge(*node_index_1, *node_index_2, delay);
+        self.graph.add_edge(*node_index_2, *node_index_1, -delay);
+    }
+
+    fn get_delay(&self, timebase_1_name: &str, event_1_name: &str, timebase_2_name: &str, event_2_name: &str) -> f64 {
+        // generate keys to specify path
+        let start_key = (String::from(timebase_1_name), String::from(event_1_name));
+        let finish_key = (String::from(timebase_2_name), String::from(event_2_name));
+        // lookup corresponding nodes
+        let start_node = self.node_map.get(&start_key).unwrap();
+        let finish_node = self.node_map.get(&finish_key).unwrap();
+        // find path
+        let ways = algo::all_simple_paths::<Vec<_>, _>(&self.graph, *start_node, *finish_node, 0, None).collect::<Vec<_>>();
+        println!("{:?}", ways);
+
+        let mut sum = 0.0;
+        for path in ways {
+            for nodes in path.windows(2) {
+                let node_1 = nodes[0];
+                let node_2 = nodes[1];
+                let node_1_weight = self.graph.node_weight(node_1).unwrap().unwrap_or(0.0);
+                let node_2_weight = self.graph.node_weight(node_2).unwrap().unwrap_or(0.0);
+                // println!("node diff = {:?} - {:?}", node_2_weight, node_1_weight);
+                sum += node_2_weight - node_1_weight;
+                let edge = self.graph.find_edge(node_1, node_2).unwrap();
+                let edge_weight = self.graph.edge_weight(edge).unwrap();
+                // println!("edge weight = {:?}", edge_weight);
+                sum += *edge_weight;
+                // println!("sum = {:?}", sum);
+            };
+        };
+        sum
+    }
+}
+
 fn main() {
-    println!("Hello, world!");
+    // create event graph
+    let mut event_graph = EventGraph::new();
+    // add events
+    event_graph.add_event("experiment", "current start", 0.0);
+    event_graph.add_event("scope", "current start", 2500.0);
+    event_graph.add_event("scope", "aux out", 30.0);
+    event_graph.add_event("pdv scope", "movement start", 2700.0);
+    // add delays
+    event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0);
+    event_graph.add_delay("scope", "aux out", "pdv scope", "t0", 100.0);
+    event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0);
+
+    let delay = event_graph.get_delay("experiment", "t0", "experiment", "movement start");
+    println!("{:?}", delay)
 }
