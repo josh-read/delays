@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 petgraph = "0.6.3"
+csv = "1.2.2"

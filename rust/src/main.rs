@@ -1,6 +1,7 @@
 use petgraph::algo;
 use petgraph::graph::{DiGraph, NodeIndex};
 use std::collections::HashMap;
+use csv;
 
 
 #[derive(Debug)]
@@ -57,6 +58,34 @@ impl EventGraph {
         self.graph.add_edge(*node_index_2, *node_index_1, -delay);
     }
 
+    fn from_csv(event_csv: &str, delay_csv: &str) -> Self {
+        let mut event_graph = Self::new();
+
+        // add events
+        let mut event_reader = csv::Reader::from_reader(event_csv.as_bytes());
+        for record in event_reader.records() {
+            let record = record.unwrap();
+            let timebase = record[0].trim();
+            let event = record[1].trim();
+            let time: f64 = record[2].trim().parse().unwrap();
+            event_graph.add_event(timebase, event, time);
+        }
+
+        // add delays
+        let mut delay_reader = csv::Reader::from_reader(delay_csv.as_bytes());
+        for record in delay_reader.records() {
+            let record = record.unwrap();
+            let timebase_1 = record[0].trim();
+            let event_1 = record[1].trim();
+            let timebase_2 = record[2].trim();
+            let event_2 = record[3].trim();
+            let time: f64 = record[4].trim().parse().unwrap();
+            event_graph.add_delay(timebase_1, event_1, timebase_2, event_2, time);
+        }
+
+        event_graph
+    }
+
     fn get_delay(&self, timebase_1_name: &str, event_1_name: &str, timebase_2_name: &str, event_2_name: &str) -> Result<f64, ()> {
         // generate keys to specify path
         let start_key = (String::from(timebase_1_name), String::from(event_1_name));
@@ -100,6 +129,7 @@ mod tests {
         let mut event_graph = EventGraph::new();
         // add events
         event_graph.add_event("experiment", "current start", 0.0);
+        // event_graph.add_event("experiment", "movement start", 1450.0);
         event_graph.add_event("scope", "current start", 2500.0);
         event_graph.add_event("scope", "aux out", 30.0);
         event_graph.add_event("pdv scope", "movement start", 2700.0);
@@ -136,5 +166,14 @@ mod tests {
 
 
 fn main() {
-    println!("Hello, world!")
+    let event_csv = "timebase, event, time
+    experiment, current start, 0
+    scope, experiment, 1550";
+
+    let delay_csv = "timebase_1, event_1, timebase_2, event_2, time
+    experiment, current start, scope, experiment, 20";
+
+    let event_graph = EventGraph::from_csv(event_csv, delay_csv);
+
+    println!("{:?}", event_graph)
 }
