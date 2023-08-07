@@ -1,0 +1,10 @@
+timebase_1,	event_1,	timebase_2, event_2,	    delay
+berkley box,    trig,           head scope, trig,           8.2
+experiment,     current start,  head scope, current start,  65.5
+experiment,     xray peak,      head scope, xray peak,      330
+experiment,     light,          pdv scope,  light,          130
+head scope,     ext out,        pdv scope,  ext out,        104
+experiment,     sib mon,        shimadzu,   sib mon,        8
+shimadzu,       sib mon,        head scope, sib mon,        77
+experiment,     ak mon,         shimadzu,   ak mon,         7
+shimadzu,       ak mon,         head scope, ak mon,         50.5

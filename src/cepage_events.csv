@@ -1,0 +1,7 @@
+timebase, event, time
+berkley box,	trig,		0
+experiment,	current start,	0
+head scope,	trig,		-895
+head scope,	ext out,	35
+head scope,	current start,	2500
+pdv scope,	ext out,	0
