@@ -162,18 +162,26 @@ mod tests {
         let delay = event_graph.get_delay("experiment", "movement start", "pdv scope", "movement start").unwrap();
         assert_eq!(delay - start_node_weight, 150.0);
     }
+
+    #[test]
+    fn create_from_csv() {
+        // manually create an event graph
+        let mut eg = EventGraph::new();
+        eg.add_event("experiment", "current start", 0.0);
+        eg.add_event("scope", "experiment", 1550.0);
+        eg.add_delay("experiment", "current start", "scope", "experiment", 20.0);
+
+        // create equivalent graph from csvs
+        let event_csv = "timebase, event, time
+        experiment, current start, 0
+        scope, experiment, 1550";
+        let delay_csv = "timebase_1, event_1, timebase_2, event_2, time
+        experiment, current start, scope, experiment, 20";
+        let event_graph_from_csv = EventGraph::from_csv(event_csv, delay_csv);
+        assert_eq!(eg.node_map, event_graph_from_csv.node_map)
+    }
 }
 
-
 fn main() {
-    let event_csv = "timebase, event, time
-    experiment, current start, 0
-    scope, experiment, 1550";
-
-    let delay_csv = "timebase_1, event_1, timebase_2, event_2, time
-    experiment, current start, scope, experiment, 20";
-
-    let event_graph = EventGraph::from_csv(event_csv, delay_csv);
-
-    println!("{:?}", event_graph)
+    println!("Hello world")
 }
