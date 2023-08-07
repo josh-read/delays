@@ -5,14 +5,14 @@ use csv;
 
 
 #[derive(Debug)]
-struct EventGraph {
+pub struct EventGraph {
     node_map: HashMap<(String, String), NodeIndex>,
     graph: DiGraph<Option<f64>, f64>,
 }
 
 impl EventGraph {
 
-    fn new() -> Self {
+    pub fn new() -> Self {
         let mut node_map: HashMap<(String, String), NodeIndex> = HashMap::new();
         let mut graph = DiGraph::<Option<f64>, f64>::new();
         Self {node_map, graph}
@@ -23,7 +23,7 @@ impl EventGraph {
         self.node_map.insert((String::from(timebase_name), String::from(event_name)), new_node);
     }
 
-    fn add_event(&mut self, timebase_name: &str, event_name: &str, time: f64) {
+    pub fn add_event(&mut self, timebase_name: &str, event_name: &str, time: f64) {
         if !self.node_map.contains_key(&(String::from(timebase_name), String::from("t0"))) {
             // add a t0 node if there isn't one already
             self._add_event(timebase_name, "t0", Some(0.0));
@@ -37,7 +37,7 @@ impl EventGraph {
         self.graph.add_edge(*new_node_index, *t0_node_index, 0.0);
     }
 
-    fn add_delay(&mut self, timebase_1_name: &str, event_1_name: &str, timebase_2_name: &str, event_2_name: &str, delay: f64) {
+    pub fn add_delay(&mut self, timebase_1_name: &str, event_1_name: &str, timebase_2_name: &str, event_2_name: &str, delay: f64) {
         // create event nodes if they do not already exist
         let key_1 = (String::from(timebase_1_name), String::from(event_1_name));
         if !self.node_map.contains_key(&key_1) {
@@ -58,7 +58,7 @@ impl EventGraph {
         self.graph.add_edge(*node_index_2, *node_index_1, -delay);
     }
 
-    fn from_csv(event_csv: &str, delay_csv: &str) -> Self {
+    pub fn from_csv(event_csv: &str, delay_csv: &str) -> Self {
         let mut event_graph = Self::new();
 
         // add events
@@ -86,7 +86,7 @@ impl EventGraph {
         event_graph
     }
 
-    fn get_delay(&self, timebase_1_name: &str, event_1_name: &str, timebase_2_name: &str, event_2_name: &str) -> Result<f64, ()> {
+    pub fn get_delay(&self, timebase_1_name: &str, event_1_name: &str, timebase_2_name: &str, event_2_name: &str) -> Result<f64, ()> {
         // generate keys to specify path
         let start_key = (String::from(timebase_1_name), String::from(event_1_name));
         let finish_key = (String::from(timebase_2_name), String::from(event_2_name));
@@ -122,7 +122,8 @@ impl EventGraph {
 
 #[cfg(test)]
 mod tests {
-    use crate::EventGraph;
+    use super::*;
+
     #[test]
     fn place_event() {
         // create event graph
@@ -180,8 +181,4 @@ mod tests {
         let event_graph_from_csv = EventGraph::from_csv(event_csv, delay_csv);
         assert_eq!(eg.node_map, event_graph_from_csv.node_map)
     }
-}
-
-fn main() {
-    println!("Hello world")
 }
