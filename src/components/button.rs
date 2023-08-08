@@ -1,18 +1,16 @@
 use gloo::console::log;
 use yew::prelude::*;
 
-// #[derive(Properties, PartialEq)]
-// pub struct Props {
-//     pub onclick: Callback<usize>
-// }
-
+#[derive(Properties, PartialEq)]
+pub struct Props {
+    pub text: String,
+    pub onclick: Callback<Event>,
+}
 
 #[function_component(Button)]
-pub fn button() -> Html {
-
-    let onclick = Callback::from(|_| log!("Clicked!"));
+pub fn button(props: &Props) -> Html {
 
     html! {
-        <button onclick={onclick}>{"I'm a button"}</button>
+        <button>{props.text.clone()}</button>
     }
 }

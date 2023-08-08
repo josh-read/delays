@@ -101,6 +101,8 @@ name = "delays-app"
 version = "0.1.0"
 dependencies = [
  "gloo 0.9.0",
+ "wasm-bindgen",
+ "web-sys",
  "yew",
 ]
 
