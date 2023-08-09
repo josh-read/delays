@@ -1,11 +1,5 @@
 {
   "image": "mcr.microsoft.com/vscode/devcontainers/rust:latest",
-  "customizations": {
-    "vscode": {
-      "files.autoSave": "off" // we want to require explicit save - otherwise we overload the trunk extension
-    }
-  },
   "features": {
-    "ghcr.io/trunk-io/devcontainer-feature/trunk": "latest"
   }
 }
