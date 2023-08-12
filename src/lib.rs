@@ -2,51 +2,61 @@ use petgraph::algo;
 use petgraph::graph::{DiGraph, NodeIndex};
 use std::collections::HashMap;
 use csv;
+use std::hash::Hash;
 
+
+#[derive(Debug, Hash, PartialEq, Eq)]
+struct Timebase<T> { timebase: T }
+
+#[derive(Debug, PartialEq, Hash, Eq)]
+enum Event<E> {
+    Thingy(E),
+    T0
+}
 
 #[derive(Debug)]
-pub struct EventGraph {
-    node_map: HashMap<(String, String), NodeIndex>,
+pub struct EventGraph<T, E> {
+    node_map: HashMap<(Timebase<T>, Event<E>), NodeIndex>,
     graph: DiGraph<Option<f64>, f64>,
 }
 
-impl EventGraph {
+impl<T: Hash + PartialEq + Eq + Clone, E: Hash + PartialEq + Eq + Clone> EventGraph<T, E> {
 
     pub fn new() -> Self {
-        let mut node_map: HashMap<(String, String), NodeIndex> = HashMap::new();
-        let mut graph = DiGraph::<Option<f64>, f64>::new();
+        let node_map: HashMap<(Timebase<T>, Event<E>), NodeIndex> = HashMap::new();
+        let graph = DiGraph::<Option<f64>, f64>::new();
         Self {node_map, graph}
     }
 
-    fn _add_event(&mut self, timebase_name: &str, event_name: &str, time: Option<f64>) {
+    fn _add_event(&mut self, timebase: T, event: Event<E>, time: Option<f64>) {
         let new_node = self.graph.add_node(time);
-        self.node_map.insert((String::from(timebase_name), String::from(event_name)), new_node);
+        self.node_map.insert((Timebase{ timebase }, event), new_node);
     }
 
-    pub fn add_event(&mut self, timebase_name: &str, event_name: &str, time: f64) {
-        if !self.node_map.contains_key(&(String::from(timebase_name), String::from("t0"))) {
+    pub fn add_event(&mut self, timebase: T, event: E, time: f64) {
+        if !self.node_map.contains_key(&(Timebase { timebase: timebase.clone() }, Event::T0)) {
             // add a t0 node if there isn't one already
-            self._add_event(timebase_name, "t0", Some(0.0));
+            self._add_event(timebase.clone(), Event::T0, Some(0.0));
         }
         // add the new event
-        self._add_event(timebase_name, event_name, Some(time));
+        self._add_event(timebase.clone(), Event::Thingy(event.clone()), Some(time));
         // link to t0
-        let t0_node_index = self.node_map.get(&(String::from(timebase_name), String::from("t0"))).unwrap();
-        let new_node_index = self.node_map.get(&(String::from(timebase_name), String::from(event_name))).unwrap();
-        self.graph.add_edge(*t0_node_index, *new_node_index, 0.0);
-        self.graph.add_edge(*new_node_index, *t0_node_index, 0.0);
+        let t0_node_index = self.node_map.get(&(Timebase { timebase: timebase.clone() }, Event::T0)).unwrap();
+        let new_node_index = self.node_map.get(&(Timebase { timebase: timebase.clone() }, Event::Thingy(event.clone()))).unwrap();
+        self.graph.add_edge(*t0_node_index, *new_node_index, time);
+        self.graph.add_edge(*new_node_index, *t0_node_index, -time);
     }
 
-    pub fn add_delay(&mut self, timebase_1_name: &str, event_1_name: &str, timebase_2_name: &str, event_2_name: &str, delay: f64) {
+    pub fn add_delay(&mut self, timebase_1: T, event_1: E, timebase_2: T, event_2: E, delay: f64) {
         // create event nodes if they do not already exist
-        let key_1 = (String::from(timebase_1_name), String::from(event_1_name));
+        let key_1 = (Timebase { timebase: timebase_1.clone() }, Event::Thingy(event_1.clone()));
         if !self.node_map.contains_key(&key_1) {
-            self._add_event(timebase_1_name, event_1_name, None)
+            self._add_event(timebase_1.clone(), Event::Thingy(event_1.clone()), None)
         }
 
-        let key_2 = (String::from(timebase_2_name), String::from(event_2_name));
+        let key_2 = (Timebase { timebase: timebase_2.clone() }, Event::Thingy(event_2.clone()));
         if !self.node_map.contains_key(&key_2) {
-            self._add_event(timebase_2_name, event_2_name, None)
+            self._add_event(timebase_2.clone(), Event::Thingy(event_2.clone()), None)
         }
 
         // recover the node_indices
@@ -58,38 +68,10 @@ impl EventGraph {
         self.graph.add_edge(*node_index_2, *node_index_1, -delay);
     }
 
-    pub fn from_csv(event_csv: &str, delay_csv: &str) -> Self {
-        let mut event_graph = Self::new();
-
-        // add events
-        let mut event_reader = csv::Reader::from_reader(event_csv.as_bytes());
-        for record in event_reader.records() {
-            let record = record.unwrap();
-            let timebase = record[0].trim();
-            let event = record[1].trim();
-            let time: f64 = record[2].trim().parse().unwrap();
-            event_graph.add_event(timebase, event, time);
-        }
-
-        // add delays
-        let mut delay_reader = csv::Reader::from_reader(delay_csv.as_bytes());
-        for record in delay_reader.records() {
-            let record = record.unwrap();
-            let timebase_1 = record[0].trim();
-            let event_1 = record[1].trim();
-            let timebase_2 = record[2].trim();
-            let event_2 = record[3].trim();
-            let time: f64 = record[4].trim().parse().unwrap();
-            event_graph.add_delay(timebase_1, event_1, timebase_2, event_2, time);
-        }
-
-        event_graph
-    }
-
-    pub fn get_delay(&self, timebase_1_name: &str, event_1_name: &str, timebase_2_name: &str, event_2_name: &str) -> Result<f64, ()> {
+    pub fn get_delay(&self, timebase_1: T, event_1: E, timebase_2: T, event_2: E) -> Result<f64, &str> {
         // generate keys to specify path
-        let start_key = (String::from(timebase_1_name), String::from(event_1_name));
-        let finish_key = (String::from(timebase_2_name), String::from(event_2_name));
+        let start_key = (Timebase{ timebase: timebase_1 }, Event::Thingy(event_1));
+        let finish_key = (Timebase{ timebase: timebase_2 }, Event::Thingy(event_2));
         // lookup corresponding nodes
         let start_node = self.node_map.get(&start_key).unwrap();
         let finish_node = self.node_map.get(&finish_key).unwrap();
@@ -99,9 +81,6 @@ impl EventGraph {
         let mut path_sums = Vec::new();
         for path in paths {
             let mut sum = 0.0;
-            let first_node_weight = self.graph.node_weight(path[0]).unwrap().unwrap_or(0.0);
-            let last_node_weight = self.graph.node_weight(path[path.len() - 1]).unwrap().unwrap_or(0.0);
-            // sum += last_node_weight - first_node_weight;
             for i in 0..path.len()-1 {
                 let node_1 = path[i];
                 let node_2 = path[i+1];
@@ -114,9 +93,41 @@ impl EventGraph {
         // if there is more than one path, return an error
         if path_sums.len() == 1 {
             Ok(path_sums[0])
+        } else if path_sums.len() == 0 {
+            Err(&"No path found.")
         } else {
-            Err(())
+            Err(&"Multiple paths found.")
         }
+    }
+}
+
+impl EventGraph<String, String> {
+    pub fn from_csv(event_csv: &str, delay_csv: &str) -> Self {
+        let mut event_graph = Self::new();
+
+        // add events
+        let mut event_reader = csv::Reader::from_reader(event_csv.as_bytes());
+        for record in event_reader.records() {
+            let record = record.unwrap();
+            let timebase = record[0].trim().to_owned();
+            let event = record[1].trim().to_owned();
+            let time: f64 = record[2].trim().parse().unwrap();
+            event_graph.add_event(timebase, event, time);
+        }
+
+        // add delays
+        let mut delay_reader = csv::Reader::from_reader(delay_csv.as_bytes());
+        for record in delay_reader.records() {
+            let record = record.unwrap();
+            let timebase_1 = record[0].trim().to_owned();
+            let event_1 = record[1].trim().to_owned();
+            let timebase_2 = record[2].trim().to_owned();
+            let event_2 = record[3].trim().to_owned();
+            let time: f64 = record[4].trim().parse().unwrap();
+            event_graph.add_delay(timebase_1, event_1, timebase_2, event_2, time);
+        }
+
+        event_graph
     }
 }
 
@@ -125,10 +136,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn place_event() {
+    fn create_event_graph() {
         // create event graph
         let mut event_graph = EventGraph::new();
-        // add events
         event_graph.add_event("experiment", "current start", 0.0);
         // event_graph.add_event("experiment", "movement start", 1450.0);
         event_graph.add_event("scope", "current start", 2500.0);
@@ -138,39 +148,109 @@ mod tests {
         event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0);
         event_graph.add_delay("scope", "aux out", "pdv scope", "t0", 100.0);
         event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0);
-
-        let delay = event_graph.get_delay("experiment", "t0", "experiment", "movement start").unwrap();
-        assert_eq!(delay, 1450.0);
     }
 
     #[test]
-    fn calculate_delay() {
+    ///    500   1000
+    /// |---|-----|--->
+    ///      <--->
+    ///       500
+    fn same_timebase_delay_integers() {
         // create event graph
         let mut event_graph = EventGraph::new();
-        // add events
+        event_graph.add_event(1, 1, 500.0);
+        event_graph.add_event(1, 2, 1000.0);
+        assert_eq!(event_graph.get_delay(1, 1, 1, 2).unwrap(), 500.0);
+    }
+
+    #[test]
+    ///  0  100
+    ///  |---|--->
+    ///   \0  \?
+    ///    |---|--->
+    ///   100 200
+    fn different_timebase_delay_integers() {
+        // create event graph
+        let mut event_graph = EventGraph::new();
+        event_graph.add_event(1, 1, 0.0);
+        event_graph.add_event(1, 2, 100.0);
+        event_graph.add_event(2, 1, 100.0);
+        event_graph.add_event(2, 2, 200.0);
+
+        event_graph.add_delay(1, 1, 2, 1, 0.0);
+        assert_eq!(event_graph.get_delay(1, 2, 2, 2).unwrap(), 0.0);
+    }
+
+    #[test]
+    ///  0   ?
+    ///  |---|--->
+    ///   \0  \0
+    ///    |---|--->
+    ///   100 200
+    fn different_timebase_event_integers() {
+        // create event graph
+        let mut event_graph = EventGraph::new();
+        event_graph.add_event(1, 1, 0.0);
+        event_graph.add_event(2, 1, 100.0);
+        event_graph.add_event(2, 2, 200.0);
+
+        event_graph.add_delay(1, 1, 2, 1, 0.0);
+        event_graph.add_delay(1, 2, 2, 2, 0.0);
+        assert_eq!(event_graph.get_delay(1, 1, 1, 2).unwrap(), 100.0);
+    }
+
+    #[test]
+    ///  0  100
+    ///  |---|--->
+    ///   \0  \?
+    ///    |---|--->
+    ///   100 200
+    fn different_timebase_strings() {
+        // create event graph
+        let mut event_graph = EventGraph::new();
+        event_graph.add_event("tb1", "e1", 0.0);
+        event_graph.add_event("tb1", "e2", 100.0);
+        event_graph.add_event("tb2", "e1", 100.0);
+        event_graph.add_event("tb2", "e2", 200.0);
+
+        event_graph.add_delay("tb1", "e1", "tb2", "e1", 0.0);
+        assert_eq!(event_graph.get_delay("tb1", "e2", "tb2", "e2").unwrap(), 0.0);
+    }
+
+    #[test]
+    fn same_timebase_strings() {
+        // create event graph
+        let mut event_graph = EventGraph::new();
+        event_graph.add_event("timebase", "event 1", 500.0);
+        event_graph.add_event("timebase", "event 2", 1000.0);
+        assert_eq!(event_graph.get_delay("timebase", "event 1", "timebase", "event 2").unwrap(), 500.0);
+    }
+
+    #[test]
+    fn real_example() {
+        // create event graph
+        let mut event_graph = EventGraph::new();
         event_graph.add_event("experiment", "current start", 0.0);
-        event_graph.add_event("experiment", "movement start", 1450.0);
         event_graph.add_event("scope", "current start", 2500.0);
         event_graph.add_event("scope", "aux out", 30.0);
+        event_graph.add_event("pdv scope", "aux out", 0.0);
         event_graph.add_event("pdv scope", "movement start", 2700.0);
         // add delays
         event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0);
-        event_graph.add_delay("scope", "aux out", "pdv scope", "t0", 100.0);
-        // event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0);
+        event_graph.add_delay("scope", "aux out", "pdv scope", "aux out", 100.0);
+        event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0);
 
-        let start_node_index = event_graph.node_map.get(&(String::from("experiment"), String::from("movement start"))).unwrap();
-        let start_node_weight = event_graph.graph.node_weight(*start_node_index).unwrap().unwrap();
-        let delay = event_graph.get_delay("experiment", "movement start", "pdv scope", "movement start").unwrap();
-        assert_eq!(delay - start_node_weight, 150.0);
+        let delay = event_graph.get_delay("experiment", "current start", "experiment", "movement start").unwrap();
+        assert_eq!(delay, 1680.0);
     }
 
     #[test]
     fn create_from_csv() {
         // manually create an event graph
         let mut eg = EventGraph::new();
-        eg.add_event("experiment", "current start", 0.0);
-        eg.add_event("scope", "experiment", 1550.0);
-        eg.add_delay("experiment", "current start", "scope", "experiment", 20.0);
+        eg.add_event(String::from("experiment"), String::from("current start"), 0.0);
+        eg.add_event(String::from("scope"), String::from("experiment"), 1550.0);
+        eg.add_delay(String::from("experiment"), String::from("current start"), String::from("scope"), String::from("experiment"), 20.0);
 
         // create equivalent graph from csvs
         let event_csv = "timebase, event, time
