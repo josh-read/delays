@@ -5,13 +5,25 @@ use csv;
 use std::hash::Hash;
 
 
-#[derive(Debug, Hash, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 struct Timebase<T> { timebase: T }
 
-#[derive(Debug, PartialEq, Hash, Eq)]
+impl<T> Timebase<T> {
+    fn new(timebase: T) -> Self {
+        Timebase { timebase }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 enum Event<E> {
-    Thingy(E),
+    Event(E),
     T0
+}
+
+impl<E> Event<E> {
+    fn new(event: E) -> Self {
+        Event::Event(event)
+    }
 }
 
 #[derive(Debug)]
@@ -23,43 +35,51 @@ pub struct EventGraph<T, E> {
 impl<T: Hash + PartialEq + Eq + Clone, E: Hash + PartialEq + Eq + Clone> EventGraph<T, E> {
 
     pub fn new() -> Self {
-        let node_map: HashMap<(Timebase<T>, Event<E>), NodeIndex> = HashMap::new();
+        let node_map = HashMap::<(Timebase<T>, Event<E>), NodeIndex>::new();
         let graph = DiGraph::<Option<f64>, f64>::new();
         Self {node_map, graph}
     }
 
-    fn _add_event(&mut self, timebase: T, event: Event<E>, time: Option<f64>) {
+    fn _add_event(&mut self, timebase: Timebase<T>, event: Event<E>, time: Option<f64>) {
         let new_node = self.graph.add_node(time);
-        self.node_map.insert((Timebase{ timebase }, event), new_node);
+        self.node_map.insert((timebase, event), new_node);
     }
 
     pub fn add_event(&mut self, timebase: T, event: E, time: f64) {
-        if !self.node_map.contains_key(&(Timebase { timebase: timebase.clone() }, Event::T0)) {
+        let timebase = Timebase::new(timebase);
+        let event = Event::new(event);
+        let t0_key = (timebase.clone(), Event::T0);
+        let event_key = (timebase.clone(), event.clone());
+        if !self.node_map.contains_key(&t0_key) {
             // add a t0 node if there isn't one already
             self._add_event(timebase.clone(), Event::T0, Some(0.0));
         }
         // add the new event
-        self._add_event(timebase.clone(), Event::Thingy(event.clone()), Some(time));
+        self._add_event(timebase, event, Some(time));
         // link to t0
-        let t0_node_index = self.node_map.get(&(Timebase { timebase: timebase.clone() }, Event::T0)).unwrap();
-        let new_node_index = self.node_map.get(&(Timebase { timebase: timebase.clone() }, Event::Thingy(event.clone()))).unwrap();
+        let t0_node_index = self.node_map.get(&t0_key).unwrap();
+        let new_node_index = self.node_map.get(&event_key).unwrap();
         self.graph.add_edge(*t0_node_index, *new_node_index, time);
         self.graph.add_edge(*new_node_index, *t0_node_index, -time);
     }
 
     pub fn add_delay(&mut self, timebase_1: T, event_1: E, timebase_2: T, event_2: E, delay: f64) {
+        let timebase_1 = Timebase::new(timebase_1);
+        let timebase_2 = Timebase::new(timebase_2);
+        let event_1 = Event::new(event_1);
+        let event_2 = Event::new(event_2);
         // create event nodes if they do not already exist
-        let key_1 = (Timebase { timebase: timebase_1.clone() }, Event::Thingy(event_1.clone()));
+        let key_1 = (timebase_1.clone(), event_1.clone());
         if !self.node_map.contains_key(&key_1) {
-            self._add_event(timebase_1.clone(), Event::Thingy(event_1.clone()), None)
+            self._add_event(timebase_1, event_1, None)
         }
 
-        let key_2 = (Timebase { timebase: timebase_2.clone() }, Event::Thingy(event_2.clone()));
+        let key_2 = (timebase_2.clone(), event_2.clone());
         if !self.node_map.contains_key(&key_2) {
-            self._add_event(timebase_2.clone(), Event::Thingy(event_2.clone()), None)
+            self._add_event(timebase_2, event_2, None)
         }
 
-        // recover the node_indices
+        // get the node_indices
         let node_index_1 = self.node_map.get(&key_1).unwrap();
         let node_index_2 = self.node_map.get(&key_2).unwrap();
 
@@ -70,8 +90,8 @@ impl<T: Hash + PartialEq + Eq + Clone, E: Hash + PartialEq + Eq + Clone> EventGr
 
     pub fn get_delay(&self, timebase_1: T, event_1: E, timebase_2: T, event_2: E) -> Result<f64, &str> {
         // generate keys to specify path
-        let start_key = (Timebase{ timebase: timebase_1 }, Event::Thingy(event_1));
-        let finish_key = (Timebase{ timebase: timebase_2 }, Event::Thingy(event_2));
+        let start_key = (Timebase::new(timebase_1), Event::new(event_1));
+        let finish_key = (Timebase::new(timebase_2), Event::new(event_2));
         // lookup corresponding nodes
         let start_node = self.node_map.get(&start_key).unwrap();
         let finish_node = self.node_map.get(&finish_key).unwrap();
@@ -99,6 +119,7 @@ impl<T: Hash + PartialEq + Eq + Clone, E: Hash + PartialEq + Eq + Clone> EventGr
             Err(&"Multiple paths found.")
         }
     }
+
 }
 
 impl EventGraph<String, String> {
