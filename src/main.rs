@@ -1,10 +1,9 @@
 use gloo::console::log;
 use yew::prelude::*;
 
-mod components;
-use crate::components::cell_array::CellArray;
-use crate::components::button::Button;
-use std::rc::Rc;
+pub mod timeline_widget;
+
+use crate::timeline_widget::TimeWidget;
 
 
 #[function_component(Header)]
@@ -20,6 +19,7 @@ fn body() -> Html {
         <>
         <h3>{"Times"}</h3>
         <p>{"Timeline view"}</p>
+        <TimeWidget />
         </>
     };
 
