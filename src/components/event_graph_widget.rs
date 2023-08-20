@@ -1,108 +1,14 @@
-use std::{ops::{Deref, DerefMut}, clone, fmt::format};
+use std::ops::Deref;
 
 use yew::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::{HtmlElement, HtmlInputElement,};
-use gloo::console::{log, externs::log};
+use gloo::console::log;
 use delays::EventGraph;
 
-#[derive(Properties, PartialEq, Default, Clone)]
-pub struct TextInputProps {
-    text: String,
-    onchange: Callback<String>,
-}
+use super::text_input_list::TextInputList;
+use super::number_input::NumberInput;
 
-#[function_component(TextInput)]
-pub fn text_input(TextInputProps{ text, onchange }: &TextInputProps) -> Html {
-
-    let onchange = onchange.clone();
-
-    let text_state = use_state(|| text.clone());
-    let cloned_text_state = text_state.clone();
-
-    let updated_cloned_text_state = Callback::from(move |event: Event| {
-        let val = event
-        .target()
-        .unwrap()
-        .unchecked_into::<HtmlInputElement>()
-        .value();
-        log!(&val);
-        onchange.emit(val.clone());
-        cloned_text_state.set(val)
-    });
-    html! {
-        <input value={text_state.deref().clone()} onchange={updated_cloned_text_state}/>
-    }
-}
-
-#[derive(Properties, PartialEq, Clone)]
-pub struct TextInputListProps {
-    text_list: Vec<String>,
-    on_update: Callback<Vec<String>>,
-}
-
-#[function_component(TextInputList)]
-pub fn text_input_list(TextInputListProps { text_list, on_update }: &TextInputListProps) -> Html {
-
-    // Initial state from input list
-    let text_list_state = use_state(|| text_list.clone());
-
-    // Create input html from text_list_state
-    text_list_state.iter().enumerate().map(|(i, text)| {
-       // Create callback which updates and emits state when the box is updated
-       let cloned_text_list_state = text_list_state.clone();
-       let on_update = on_update.clone();
-       let on_change = Callback::from(move |text: String| {
-            let mut text_list = cloned_text_list_state.deref().to_owned();
-            text_list[i] = text;
-            on_update.emit(text_list.clone());
-            cloned_text_list_state.set(text_list)
-        });
-        html! {<TextInput text={text.clone()} onchange={on_change} />}
-    }).collect::<Html>()
-}
-
-#[derive(Properties, PartialEq, Default, Clone)]
-pub struct NumberInputProps {
-    onchange: Callback<f64>,
-    onclick: Callback<MouseEvent>,
-}
-
-#[function_component(NumberInput)]
-pub fn number_input(NumberInputProps{ onchange, onclick }: &NumberInputProps) -> Html {
-    
-    let onchange = onchange.clone();
-    let onclick = onclick.clone();
-
-    let text_state = use_state(|| "".to_owned());
-    let cloned_text_state = text_state.clone();
-    let updated_cloned_text_state = Callback::from(move |event: Event| {
-        let val = event
-        .target()
-        .unwrap()
-        .unchecked_into::<HtmlInputElement>()
-        .value();
-        log!(format!("Invalid time entered: {}", &val));
-        if let Ok(num) = val.parse() {
-            onchange.emit(num);
-            cloned_text_state.set(format!("{}", num))
-        } else {
-            cloned_text_state.set("".to_owned())
-        }
-    });
-
-    let clicky_callback = Callback::from(move |event: MouseEvent| {
-        onclick.emit(event)
-    });
-
-    let cloned_text_state = text_state.clone();
-    html! {
-        <input value={format!("{}", *cloned_text_state)} onchange={updated_cloned_text_state} onclick={clicky_callback} />
-    }
-}
-
-#[function_component(TimeWidget)]
-pub fn time_widget() -> Html {
+#[function_component(EventGraphWidget)]
+pub fn event_graph_widget() -> Html {
 
     let n_events: usize = 6;
     let n_timebases: usize = 3;
@@ -131,7 +37,6 @@ pub fn time_widget() -> Html {
     let timebase_list_update = Callback::from(move |timebase_list: Vec<String>| {
         cloned_timebase_list_state.set(timebase_list)
     });
-
 
     let clicked_time_state = use_state(|| None);
     let control_clicked_time_state = use_state(|| None);
@@ -187,7 +92,6 @@ pub fn time_widget() -> Html {
         };
         html!(<>{"From:"}{time_1_html}{"To:"}{time_2_html}{"Delay:"}<input value={"".to_owned()}/></>)
     };
-
 
     html! {
         <>

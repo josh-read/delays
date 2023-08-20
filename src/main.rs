@@ -1,8 +1,8 @@
 use gloo::console::log;
 use yew::prelude::*;
 
-pub mod timeline_widget;
-use crate::timeline_widget::TimeWidget;
+pub mod components;
+use crate::components::event_graph_widget::EventGraphWidget;
 
 
 #[function_component(Header)]
@@ -15,7 +15,7 @@ fn header() -> Html {
 #[function_component(Body)]
 fn body() -> Html {
     html! {
-        <TimeWidget />
+        <EventGraphWidget />
     }
 }
 
