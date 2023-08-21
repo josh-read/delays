@@ -7,6 +7,7 @@ use delays::EventGraph;
 
 use super::text_input_list::TextInputList;
 use super::number_input::NumberInput;
+use super::text_input::TextInput;
 
 #[derive(Clone)]
 struct EventGraphData {
@@ -32,69 +33,96 @@ impl EventGraphData {
     }
 }
 
+// fn wrap_in_cells<T: IntoIterator>(iterator: T) -> Html {
+//     iterator.into_iter().map(|cell: Html| html!(<tr>{cell}</tr>)).collect::<Html>()
+// }
+
 #[function_component(EventGraphWidget)]
 pub fn event_graph_widget() -> Html {
 
     let event_graph_data = EventGraphData::new(6, 3);
     let state = use_state(|| event_graph_data);
 
-    // event text boxes state and initialisation
     let cloned_state = state.clone();
-    let event_list_update = Callback::from(move |events: Vec<String>| {
-        for event in events.iter() {log!(event)};
-        cloned_state.set(
-            EventGraphData {
-                events,
-                ..cloned_state.deref().clone()
-            }
-        )
-    });
+    let time_html = {
+        let EventGraphData {
+            events,
+            timebases,
+            times,
+            ..
+        } = cloned_state.deref().to_owned();
 
-    // timebase text boxes state and initialisation
-    let cloned_state = state.clone();
-    let timebase_list_update = Callback::from(move |timebases: Vec<String>| {
-        for tb in timebases.iter() {log!(tb)};
-        cloned_state.set(
-            EventGraphData {
-                timebases,
-                ..cloned_state.deref().clone()
-            }
-        )
-    });
-
-    let cloned_state = state.clone();
-    let times = cloned_state.times.deref().to_owned();
-    let time_array_html = times.iter().enumerate().map(|(j, row)| {
-        // generate html from the row
-        let row_html = row.iter().enumerate().map(|(i, text)| {
-            // create a callback to update state
-            let on_change = Callback::from(move |num| {
-                log!("got {} at indices {} {}", num, i, j)
+        let events_html = events.iter().enumerate().map(|(i, text)| {
+           // Create callback which updates and emits state when the box is updated
+           let cloned_state = state.clone();
+           let on_change = Callback::from(move |text: String| {
+                let mut events = cloned_state.events.to_owned();
+                events[i] = text;
+                cloned_state.set( EventGraphData {
+                    events,
+                    ..cloned_state.deref().clone()
+                })
             });
-            // create a callback to update delay
-            let cloned_state = state.clone();
-            let on_click = Callback::from(move |event: MouseEvent| {
-                if event.meta_key() {
-                    cloned_state.set(
-                        EventGraphData {
-                            control_clicked_time: Some((i, j)),
-                            ..cloned_state.deref().clone()
-                        }
-                    )
-                } else {
-                    cloned_state.set(
-                        EventGraphData {
-                            clicked_time: Some((i, j)),
-                            control_clicked_time: None,
-                            ..cloned_state.deref().clone()
-                        }
-                    )
-                }
-            });
-            html!(<NumberInput onchange={on_change} onclick={on_click} />)
+            html! {<td><TextInput text={text.clone()} onchange={on_change} /></td>}
         }).collect::<Html>();
-        html!(<div>{row_html}</div>)
-    }).collect::<Html>();
+
+        let top_row_html = html!(<tr><td></td>{events_html}</tr>);
+
+        let timebases_iterable = timebases.iter().enumerate().map(|(j, text)| {
+            let cloned_state = state.clone();
+            let on_change = Callback::from(move |text: String| {
+                let mut timebases = cloned_state.timebases.to_owned();
+                timebases[j] = text;
+                cloned_state.set( EventGraphData {
+                    timebases,
+                    ..cloned_state.deref().clone()
+                })
+            });
+            html!( <td><TextInput text={text.clone()} onchange={on_change} /></td>)
+        });
+
+        let time_array_iterable = times.iter().enumerate().map(|(j, row)| {
+            // generate html from the row
+            row.iter().enumerate().map(|(i, text)| {
+                // create a callback to update state
+                let on_change = Callback::from(move |num| {
+                    log!(format!("Update node ({}, {}) with time {}", i, j, num))
+                });
+                // create a callback to update delay
+                let cloned_state = state.clone();
+                let on_click = Callback::from(move |event: MouseEvent| {
+                    if event.meta_key() {
+                        cloned_state.set(
+                            EventGraphData {
+                                control_clicked_time: Some((i, j)),
+                                ..cloned_state.deref().clone()
+                            }
+                        )
+                    } else {
+                        cloned_state.set(
+                            EventGraphData {
+                                clicked_time: Some((i, j)),
+                                control_clicked_time: None,
+                                ..cloned_state.deref().clone()
+                            }
+                        )
+                    }
+                });
+                html!(<td><NumberInput onchange={on_change} onclick={on_click} /></td>)
+            }).collect::<Html>()
+        });
+
+        let other_rows_html = timebases_iterable.zip(time_array_iterable).map(|(timebase_html, time_array_html)| {
+            html!(<tr>{timebase_html}{time_array_html}</tr>)
+        }).collect::<Html>();
+
+        html!{
+            <table>
+            {top_row_html}
+            {other_rows_html}
+            </table>
+        }
+    };
 
     let cloned_state = state.clone();
     let delay_html = {
@@ -128,15 +156,9 @@ pub fn event_graph_widget() -> Html {
         html!(<>{"From:"}{time_1_html}{"To:"}{time_2_html}{"Delay:"}<input value={"".to_owned()}/></>)
     };
 
-    let cloned_state = state.clone();
     html! {
         <>
-        <p> {"Events:"} </p>
-        <TextInputList text_list={cloned_state.events.deref().to_owned()} on_update={event_list_update} />
-        <p> {"Timebases:"} </p>
-        <TextInputList text_list={cloned_state.timebases.deref().to_owned()} on_update={timebase_list_update} />
-        <p> {"Times"} </p>
-        {time_array_html}
+        {time_html}
         <p> {"Delay"} </p>
         {delay_html}
         </>
