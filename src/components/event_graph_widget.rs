@@ -5,7 +5,6 @@ use yew::prelude::*;
 use gloo::console::log;
 use delays::EventGraph;
 
-use super::text_input_list::TextInputList;
 use super::number_input::NumberInput;
 use super::text_input::TextInput;
 
@@ -32,10 +31,6 @@ impl EventGraphData {
         EventGraphData { events, timebases, times, clicked_time: None, control_clicked_time: None, event_graph }
     }
 }
-
-// fn wrap_in_cells<T: IntoIterator>(iterator: T) -> Html {
-//     iterator.into_iter().map(|cell: Html| html!(<tr>{cell}</tr>)).collect::<Html>()
-// }
 
 #[function_component(EventGraphWidget)]
 pub fn event_graph_widget() -> Html {
