@@ -3,14 +3,23 @@ use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use gloo::console::log;
 
-#[derive(Properties, PartialEq, Default, Clone)]
+#[derive(Debug, Clone, PartialEq)]
+pub enum ValueTypes {
+    EditableValue(f64),
+    UneditableValue(f64),
+    EditableNoValue,
+    UneditableNoValue,
+}
+
+#[derive(Properties, PartialEq, Clone)]
 pub struct NumberInputProps {
-    pub onchange: Callback<f64>,
+    pub value: ValueTypes,
+    pub onchange: Callback<Option<f64>>,
     pub onclick: Callback<MouseEvent>,
 }
 
 #[function_component(NumberInput)]
-pub fn number_input(NumberInputProps{ onchange, onclick }: &NumberInputProps) -> Html {
+pub fn number_input(NumberInputProps{ value, onchange, onclick }: &NumberInputProps) -> Html {
     
     let onchange = onchange.clone();
     let onclick = onclick.clone();
@@ -25,9 +34,10 @@ pub fn number_input(NumberInputProps{ onchange, onclick }: &NumberInputProps) ->
         .value();
         log!(format!("Invalid time entered: {}", &val));
         if let Ok(num) = val.parse() {
-            onchange.emit(num);
+            onchange.emit(Some(num));
             cloned_text_state.set(format!("{}", num))
         } else {
+            onchange.emit(None);
             cloned_text_state.set("".to_owned())
         }
     });
@@ -36,8 +46,19 @@ pub fn number_input(NumberInputProps{ onchange, onclick }: &NumberInputProps) ->
         onclick.emit(event)
     });
 
-    let cloned_text_state = text_state.clone();
-    html! {
-        <input value={format!("{}", *cloned_text_state)} onchange={updated_cloned_text_state} onclick={clicky_callback} />
+    let (editable, val) = match value {
+        ValueTypes::EditableValue(num) => (true, num.to_string()),
+        ValueTypes::UneditableValue(num) => (false, num.to_string()),
+        ValueTypes::EditableNoValue => (true, "".to_string()),
+        ValueTypes::UneditableNoValue => (false, "".to_string()),
+    };
+    if editable {
+        html! {
+            <input value={val} onchange={updated_cloned_text_state} onclick={clicky_callback} />
+        }
+    } else {
+        html! {
+            <input readonly={true} value={val} onchange={updated_cloned_text_state} onclick={clicky_callback} />
+        }
     }
 }

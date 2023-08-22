@@ -1,3 +1,4 @@
+use std::borrow::BorrowMut;
 use std::ops::Deref;
 use std::rc::Rc;
 
@@ -5,14 +6,14 @@ use yew::prelude::*;
 use gloo::console::log;
 use delays::EventGraph;
 
-use super::number_input::NumberInput;
+use super::number_input::{NumberInput, ValueTypes};
 use super::text_input::TextInput;
 
 #[derive(Clone)]
 struct EventGraphData {
     events: Vec<String>,
     timebases: Vec<String>,
-    times: Vec<Vec<String>>,
+    times: Vec<Vec<Option<f64>>>,
     clicked_time: Option<(usize, usize)>,
     control_clicked_time: Option<(usize, usize)>,
     event_graph: Rc<EventGraph<usize, usize>>,
@@ -26,8 +27,8 @@ impl EventGraphData {
         let timebases: Vec<String> = (0..n_timebases)
         .map(|i| format!("timebase {}", i).to_owned())
         .collect();
-        let times = (0..n_timebases).map(|_| (0..n_events).map(|_| String::default()).collect()).collect();
-        let event_graph = Rc::new(EventGraph::new());
+        let times = (0..n_timebases).map(|_| (0..n_events).map(|_| None).collect()).collect();
+        let mut event_graph = Rc::new(EventGraph::new());
         EventGraphData { events, timebases, times, clicked_time: None, control_clicked_time: None, event_graph }
     }
 }
@@ -78,12 +79,33 @@ pub fn event_graph_widget() -> Html {
 
         let time_array_iterable = times.iter().enumerate().map(|(j, row)| {
             // generate html from the row
-            row.iter().enumerate().map(|(i, text)| {
-                // create a callback to update state
+            row.iter().enumerate().map(|(i, val)| {
+                
+                // create a callback for when time is updated
+                let cloned_state = state.clone();
                 let on_change = Callback::from(move |num| {
-                    log!(format!("Update node ({}, {}) with time {}", i, j, num))
+                    log!(format!("Update node ({}, {}) with time {:?}", i, j, num));
+                    let EventGraphData {
+                        times,
+                        // mut event_graph,
+                        ..
+                    } = cloned_state.deref().clone();
+                    let mut times = times.to_owned();
+                    times[j][i] = num;
+                    if let Some(n) = num {
+                        log!("Add the event!")
+                    } else {
+                        log!("Should probably delete the event here")
+                    }
+                    cloned_state.set(
+                        EventGraphData {
+                            times,
+                            ..cloned_state.deref().clone()
+                        }
+                    )
                 });
-                // create a callback to update delay
+
+                // create a callback record clicked and control clicked boxes
                 let cloned_state = state.clone();
                 let on_click = Callback::from(move |event: MouseEvent| {
                     if event.meta_key() {
@@ -103,7 +125,17 @@ pub fn event_graph_widget() -> Html {
                         )
                     }
                 });
-                html!(<td><NumberInput onchange={on_change} onclick={on_click} /></td>)
+
+                // Get the value to display
+                let value = if let Some(num) = val {
+                    ValueTypes::EditableValue(*num)
+                } else {
+                    // see if its in the times array
+                    // if not calculate it
+                    // if this gives an error then return none
+                    ValueTypes::EditableNoValue
+                };
+                html!(<td><NumberInput value={value} onchange={on_change} onclick={on_click} /></td>)
             }).collect::<Html>()
         });
 
@@ -136,7 +168,7 @@ pub fn event_graph_widget() -> Html {
                 </>
             }
         } else {
-            html!(<><input/><input/></>)
+            html!(<><input value={""}/><input value={""}/></>)
         };
         let time_2_html = if let Some((i, j)) = control_clicked_time {
             html! {
@@ -146,9 +178,59 @@ pub fn event_graph_widget() -> Html {
                 </>
             }
         } else {
-            html!(<><input/><input/></>)
+            html!(<><input value={""}/><input value={""}/></>)
         };
-        html!(<>{"From:"}{time_1_html}{"To:"}{time_2_html}{"Delay:"}<input value={"".to_owned()}/></>)
+
+        let cloned_state = state.clone();
+        let value = {
+            let EventGraphData {
+                clicked_time,
+                control_clicked_time,
+                // event_graph,
+                ..
+            } = cloned_state.deref().clone();
+            // let eg = event_graph;
+            if let (Some((e1, t1)), Some((e2, t2))) = (clicked_time, control_clicked_time) {
+                // let val = eg.get_delay(t1, e1, t2, e2);
+                log!("Get the delay");
+                // if let Ok(num) = val {
+                //     ValueTypes::UneditableValue(num)
+                // } else {
+                //     ValueTypes::EditableNoValue
+                // }
+                ValueTypes::EditableNoValue
+            } else {
+                ValueTypes::UneditableNoValue
+            }
+        };
+        let cloned_state = state.clone();
+        let onchange = Callback::from(move |num| {
+            // do something with the number like add a delay i guess
+            let EventGraphData {
+                clicked_time,
+                control_clicked_time,
+                // event_graph,
+                ..
+            } = cloned_state.deref().clone();
+            if let (Some((e1, t1)), Some((e2, t2))) = (clicked_time, control_clicked_time) {
+                // let mut eg = *event_graph.borrow_mut();
+                if let Some(n) = num {
+                    // eg.add_delay(t1, e1, t2, e2, n)
+                } else {
+                    // delete the delay
+                    // eg.remove_delay(t1, e1, t2, e2)
+                }
+            };
+        });
+        let onclick = Callback::from(|_| ());
+
+        html! {
+            <>
+            {"From:"}{time_1_html}
+            {"To:"}{time_2_html}
+            {"Delay:"}<NumberInput value={ValueTypes::EditableNoValue} onchange={onchange} onclick={onclick}/>
+            </>
+        }
     };
 
     html! {
