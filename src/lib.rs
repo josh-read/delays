@@ -26,7 +26,7 @@ impl<E> Event<E> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EventGraph<T, E> {
     node_map: HashMap<(Timebase<T>, Event<E>), NodeIndex>,
     graph: DiGraph<Option<f64>, f64>,
@@ -93,8 +93,16 @@ impl<T: Hash + PartialEq + Eq + Clone, E: Hash + PartialEq + Eq + Clone> EventGr
         let start_key = (Timebase::new(timebase_1), Event::new(event_1));
         let finish_key = (Timebase::new(timebase_2), Event::new(event_2));
         // lookup corresponding nodes
-        let start_node = self.node_map.get(&start_key).unwrap();
-        let finish_node = self.node_map.get(&finish_key).unwrap();
+        let start_node = if let Some(node) = self.node_map.get(&start_key) {
+            node
+        } else {
+            return Err(&"Node doesn't exist")
+        };
+        let finish_node = if let Some(node) = self.node_map.get(&finish_key) {
+            node
+        } else {
+            return Err(&"Node doesn't exist")
+        };;
         // find all possible paths from start node to finish node
         let paths = algo::all_simple_paths::<Vec<_>, _>(&self.graph, *start_node, *finish_node, 0, None).collect::<Vec<_>>();
         // add up the edge weights and node weight differences to get the total delay of the path
