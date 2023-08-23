@@ -32,7 +32,6 @@ pub fn number_input(NumberInputProps{ value, onchange, onclick }: &NumberInputPr
         .unwrap()
         .unchecked_into::<HtmlInputElement>()
         .value();
-        log!(format!("Invalid time entered: {}", &val));
         if let Ok(num) = val.parse() {
             onchange.emit(Some(num));
             cloned_text_state.set(format!("{}", num))

@@ -16,7 +16,7 @@ struct EventGraphData {
     times: Vec<Vec<Option<f64>>>,
     clicked_time: Option<(usize, usize)>,
     control_clicked_time: Option<(usize, usize)>,
-    event_graph: Rc<EventGraph<usize, usize>>,
+    event_graph: EventGraph<usize, usize>,
 }
 
 impl EventGraphData {
@@ -28,7 +28,7 @@ impl EventGraphData {
         .map(|i| format!("timebase {}", i).to_owned())
         .collect();
         let times = (0..n_timebases).map(|_| (0..n_events).map(|_| None).collect()).collect();
-        let mut event_graph = Rc::new(EventGraph::new());
+        let mut event_graph = EventGraph::new();
         EventGraphData { events, timebases, times, clicked_time: None, control_clicked_time: None, event_graph }
     }
 }
@@ -87,19 +87,22 @@ pub fn event_graph_widget() -> Html {
                     log!(format!("Update node ({}, {}) with time {:?}", i, j, num));
                     let EventGraphData {
                         times,
-                        // mut event_graph,
+                        mut event_graph,
                         ..
                     } = cloned_state.deref().clone();
                     let mut times = times.to_owned();
                     times[j][i] = num;
                     if let Some(n) = num {
-                        log!("Add the event!")
+                        log!("Add the event!", j, i, n);
+                        event_graph.add_event(j, i, n);
+                        log!(format!("{:?}", event_graph))
                     } else {
-                        log!("Should probably delete the event here")
+                        log!("TODO: delete the event")
                     }
                     cloned_state.set(
                         EventGraphData {
                             times,
+                            event_graph,
                             ..cloned_state.deref().clone()
                         }
                     )
@@ -186,41 +189,46 @@ pub fn event_graph_widget() -> Html {
             let EventGraphData {
                 clicked_time,
                 control_clicked_time,
-                // event_graph,
+                event_graph,
                 ..
             } = cloned_state.deref().clone();
-            // let eg = event_graph;
             if let (Some((e1, t1)), Some((e2, t2))) = (clicked_time, control_clicked_time) {
-                // let val = eg.get_delay(t1, e1, t2, e2);
-                log!("Get the delay");
-                // if let Ok(num) = val {
-                //     ValueTypes::UneditableValue(num)
-                // } else {
-                //     ValueTypes::EditableNoValue
-                // }
-                ValueTypes::EditableNoValue
+                let val = event_graph.get_delay(t1, e1, t2, e2);
+                log!("Try to get the delay: ", format!("{:?}", val));
+                if let Ok(num) = val {
+                    ValueTypes::UneditableValue(num)
+                } else {
+                    ValueTypes::EditableNoValue
+                }
             } else {
                 ValueTypes::UneditableNoValue
             }
         };
         let cloned_state = state.clone();
         let onchange = Callback::from(move |num| {
-            // do something with the number like add a delay i guess
             let EventGraphData {
                 clicked_time,
                 control_clicked_time,
-                // event_graph,
+                mut event_graph,
                 ..
             } = cloned_state.deref().clone();
+
             if let (Some((e1, t1)), Some((e2, t2))) = (clicked_time, control_clicked_time) {
-                // let mut eg = *event_graph.borrow_mut();
                 if let Some(n) = num {
-                    // eg.add_delay(t1, e1, t2, e2, n)
+                    event_graph.add_delay(t1, e1, t2, e2, n)
                 } else {
+                    log!("need to delete delay")
                     // delete the delay
                     // eg.remove_delay(t1, e1, t2, e2)
                 }
             };
+            
+            cloned_state.set(
+                EventGraphData {
+                    event_graph,
+                    ..cloned_state.deref().clone()
+                }
+            )
         });
         let onclick = Callback::from(|_| ());
 
@@ -228,7 +236,7 @@ pub fn event_graph_widget() -> Html {
             <>
             {"From:"}{time_1_html}
             {"To:"}{time_2_html}
-            {"Delay:"}<NumberInput value={ValueTypes::EditableNoValue} onchange={onchange} onclick={onclick}/>
+            {"Delay:"}<NumberInput value={value} onchange={onchange} onclick={onclick}/>
             </>
         }
     };
