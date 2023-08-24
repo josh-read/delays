@@ -13,7 +13,6 @@ use super::text_input::TextInput;
 struct EventGraphData {
     events: Vec<String>,
     timebases: Vec<String>,
-    times: Vec<Vec<Option<f64>>>,
     clicked_time: Option<(usize, usize)>,
     control_clicked_time: Option<(usize, usize)>,
     event_graph: EventGraph<usize, usize>,
@@ -27,9 +26,8 @@ impl EventGraphData {
         let timebases: Vec<String> = (0..n_timebases)
         .map(|i| format!("timebase {}", i).to_owned())
         .collect();
-        let times = (0..n_timebases).map(|_| (0..n_events).map(|_| None).collect()).collect();
         let mut event_graph = EventGraph::new();
-        EventGraphData { events, timebases, times, clicked_time: None, control_clicked_time: None, event_graph }
+        EventGraphData { events, timebases, clicked_time: None, control_clicked_time: None, event_graph }
     }
 }
 
@@ -44,7 +42,6 @@ pub fn event_graph_widget() -> Html {
         let EventGraphData {
             events,
             timebases,
-            times,
             ..
         } = cloned_state.deref().to_owned();
 
@@ -77,15 +74,14 @@ pub fn event_graph_widget() -> Html {
             html!( <td><TextInput text={text.clone()} onchange={on_change} /></td>)
         });
 
-        let time_array_iterable = times.iter().enumerate().map(|(j, row)| {
+        let time_array_iterable = (0..timebases.len()).map(|j| {
             // generate html from the row
-            row.iter().enumerate().map(|(i, val)| {
+            (0..events.len()).map(|i| {
                 
                 // create a callback for when time is updated
                 let cloned_state = state.clone();
                 let on_change = Callback::from(move |num| {
                     let EventGraphData {
-                        times,
                         mut event_graph,
                         ..
                     } = cloned_state.deref().clone();
@@ -100,7 +96,6 @@ pub fn event_graph_widget() -> Html {
                     }
                     cloned_state.set(
                         EventGraphData {
-                            times,
                             event_graph,
                             ..cloned_state.deref().clone()
                         }
