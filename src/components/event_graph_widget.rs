@@ -220,9 +220,7 @@ pub fn event_graph_widget() -> Html {
                 if let Some(n) = num {
                     event_graph.update_delay(t1, e1, t2, e2, n);
                 } else {
-                    log!("need to delete delay")
-                    // delete the delay
-                    // eg.remove_delay(t1, e1, t2, e2)
+                    event_graph.remove_delay(t1, e1, t2, e2);
                 }
             };
             

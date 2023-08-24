@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
-use gloo::console::log;
+use stylist::css;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValueTypes {
@@ -45,19 +45,20 @@ pub fn number_input(NumberInputProps{ value, onchange, onclick }: &NumberInputPr
         onclick.emit(event)
     });
 
-    let (editable, val) = match value {
-        ValueTypes::EditableValue(num) => (true, num.to_string()),
-        ValueTypes::UneditableValue(num) => (false, num.to_string()),
-        ValueTypes::EditableNoValue => (true, "".to_string()),
-        ValueTypes::UneditableNoValue => (false, "".to_string()),
+    let (editable, val, css) = match value {
+        ValueTypes::EditableValue(num) => (true, num.to_string(), css!("background: lightgreen;")),
+        ValueTypes::UneditableValue(num) => (false, num.to_string(), css!("background: coral;")),
+        ValueTypes::EditableNoValue => (true, "".to_string(), css!("background: white;")),
+        ValueTypes::UneditableNoValue => (false, "".to_string(), css!("background: lightcoral;")),
     };
+
     if editable {
         html! {
-            <input value={val} onchange={updated_cloned_text_state} onclick={clicky_callback} />
+            <input class={css} value={val} onchange={updated_cloned_text_state} onclick={clicky_callback} />
         }
     } else {
         html! {
-            <input readonly={true} value={val} onchange={updated_cloned_text_state} onclick={clicky_callback} />
+            <input class={css} readonly={true} value={val} onchange={updated_cloned_text_state} onclick={clicky_callback} />
         }
     }
 }
