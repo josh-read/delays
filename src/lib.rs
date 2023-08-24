@@ -1,5 +1,6 @@
 use petgraph::algo;
 use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::visit::Time;
 use std::collections::HashMap;
 use csv;
 use std::hash::Hash;
@@ -105,12 +106,47 @@ impl<T: Hash + PartialEq + Eq + Clone, E: Hash + PartialEq + Eq + Clone> EventGr
         Ok(())
     }
 
-    pub fn update_time(&mut self, timebase: T, event: E, time: f64) {
-        todo!()
+    pub fn update_time(&mut self, timebase: T, event: E, time: f64) -> Result<(), Errors> {
+        if let Err(e) = self.add_time(timebase.clone(), event.clone(), time) {
+            match e {
+                Errors::AlreadyConstrained(_) => Err(Errors::AlreadyConstrained(())),
+                Errors::AlreadyExists => {
+                    // just load it up and change the weight
+                    let t0_key = EventGraph::_generate_t0_key(timebase.clone());
+                    let key = EventGraph::_generate_time_key(timebase, event);
+                    let t0_node = self.map.get(&t0_key).unwrap();
+                    let node = self.map.get(&key).unwrap();
+                    
+                    let fwd_edge = self.graph.find_edge(*t0_node, *node).unwrap();
+                    let bwd_edge = self.graph.find_edge(*node, *t0_node).unwrap();
+
+                    self.graph[fwd_edge] = time;
+                    self.graph[bwd_edge] = -time;
+
+                    self.graph[*node] = Some(time);
+
+                    Ok(())
+                },
+            }
+        } else {
+            Ok(())
+        }
     }
 
-    pub fn remove_time(&mut self, timebase: T, event: E) {
-        todo!()
+    pub fn remove_time(&mut self, timebase: T, event: E) -> Result<(), Errors> {
+        let t0_key = EventGraph::_generate_t0_key(timebase.clone());
+        let key = EventGraph::_generate_time_key(timebase, event);
+        let t0_node = self.map.get(&t0_key).unwrap();
+        let node = self.map.get(&key).unwrap();
+        
+        let fwd_edge = self.graph.find_edge(*t0_node, *node).unwrap();
+        let bwd_edge = self.graph.find_edge(*node, *t0_node).unwrap();
+
+        self.graph.remove_edge(fwd_edge).unwrap();
+        self.graph.remove_edge(bwd_edge).unwrap();
+
+        self.graph.remove_node(*node);
+        Ok(())
     }
 
     pub fn add_delay(&mut self, timebase_1: T, event_1: E, timebase_2: T, event_2: E, delay: f64) -> Result<(), Errors> {
@@ -143,12 +179,46 @@ impl<T: Hash + PartialEq + Eq + Clone, E: Hash + PartialEq + Eq + Clone> EventGr
         Ok(())
     }
 
-    pub fn update_delay(&mut self, timebase_1: T, event_1: E, timebase_2: T, event_2: E, delay: f64) {
-        todo!()
+    pub fn update_delay(&mut self, timebase_1: T, event_1: E, timebase_2: T, event_2: E, delay: f64) -> Result<(), Errors> {
+        if let Err(e) = self.add_delay(timebase_1.clone(), event_1.clone(), timebase_2.clone(), event_2.clone(), delay) {
+            match e {
+                Errors::AlreadyConstrained(_) => Err(Errors::AlreadyConstrained(())),
+                Errors::AlreadyExists => {
+                    // just load it up and change the weight
+                    let key_1 = EventGraph::_generate_time_key(timebase_1, event_1);
+                    let key_2 = EventGraph::_generate_time_key(timebase_2, event_2);
+                    
+                    let node_1 = self.map.get(&key_1).unwrap();
+                    let node_2 = self.map.get(&key_2).unwrap();
+                    
+                    let fwd_edge = self.graph.find_edge(*node_1, *node_2).unwrap();
+                    let bwd_edge = self.graph.find_edge(*node_2, *node_1).unwrap();
+
+                    self.graph[fwd_edge] = delay;
+                    self.graph[bwd_edge] = -delay;
+                    
+                    Ok(())
+                },
+            }
+        } else {
+            Ok(())
+        }
     }
 
-    pub fn remove_delay(&mut self, timebase_1: T, event_1: E, timebase_2: T, event_2: E) {
-        todo!()
+    pub fn remove_delay(&mut self, timebase_1: T, event_1: E, timebase_2: T, event_2: E) -> Result<(), Errors> {
+        let key_1 = EventGraph::_generate_time_key(timebase_1, event_1);
+        let key_2 = EventGraph::_generate_time_key(timebase_2, event_2);
+        
+        let node_1 = self.map.get(&key_1).unwrap();
+        let node_2 = self.map.get(&key_2).unwrap();
+        
+        let fwd_edge = self.graph.find_edge(*node_1, *node_2).unwrap();
+        let bwd_edge = self.graph.find_edge(*node_2, *node_1).unwrap();
+
+        self.graph.remove_edge(fwd_edge).unwrap();
+        self.graph.remove_edge(bwd_edge).unwrap();
+
+        Ok(())
     }
 
     pub fn lookup_delay(&self, timebase_1: T, event_1: E, timebase_2: T, event_2: E) -> Option<f64> {
@@ -230,8 +300,16 @@ impl<T: Hash + PartialEq + Eq + Clone, E: Hash + PartialEq + Eq + Clone> EventGr
         }
     }
 
-    pub fn get_time(&self, timebase: T, event: E) {
-        todo!()
+    pub fn get_time(&self, timebase: T, event: E) -> Option<f64> {
+        if let Some(time) = self.lookup_time(timebase.clone(), event.clone()) {
+            Some(time)
+        } else {
+            if let Some(time) = self.calculate_time(timebase, event) {
+                Some(time)
+            } else {
+                None
+            }
+        }
     }
 }
 
@@ -282,6 +360,20 @@ mod tests {
         event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0).unwrap();
         event_graph.add_delay("scope", "aux out", "pdv scope", "t0", 100.0).unwrap();
         event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0).unwrap();
+    }
+
+    #[test]
+    fn update_time() {
+        let mut event_graph = EventGraph::new();
+        // create a time
+        event_graph.add_time(1, 1, 0.).unwrap();
+        // adding the same time should fail
+        assert!(event_graph.add_time(1, 1, 10.).is_err());
+        // updating the time should work
+        event_graph.update_time(1, 1, 20.).unwrap();
+        // updating a node that doesn't exist yet should also work
+        event_graph.update_time(1, 2, 30.).unwrap();
+        assert_eq!(event_graph.get_delay(1, 1, 1, 2).unwrap(), 10.)
     }
 
     #[test]
