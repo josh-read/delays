@@ -84,20 +84,19 @@ pub fn event_graph_widget() -> Html {
                 // create a callback for when time is updated
                 let cloned_state = state.clone();
                 let on_change = Callback::from(move |num| {
-                    log!(format!("Update node ({}, {}) with time {:?}", i, j, num));
                     let EventGraphData {
                         times,
                         mut event_graph,
                         ..
                     } = cloned_state.deref().clone();
-                    let mut times = times.to_owned();
-                    times[j][i] = num;
+                    // let mut times = times.to_owned();
+                    // times[j][i] = num;
                     if let Some(n) = num {
                         log!("Add the event!", j, i, n);
-                        event_graph.add_event(j, i, n);
-                        log!(format!("{:?}", event_graph))
+                        event_graph.update_time(j, i, n);
                     } else {
-                        log!("TODO: delete the event")
+                        log!("Remove the event", j, i);
+                        event_graph.remove_time(j, i);
                     }
                     cloned_state.set(
                         EventGraphData {
@@ -129,14 +128,20 @@ pub fn event_graph_widget() -> Html {
                     }
                 });
 
+                let cloned_state = state.clone();
+                let EventGraphData {
+                    mut event_graph,
+                    ..
+                } = cloned_state.deref().clone();
                 // Get the value to display
-                let value = if let Some(num) = val {
-                    ValueTypes::EditableValue(*num)
+                let value = if let Some(num) = event_graph.lookup_time(j, i) {
+                    ValueTypes::EditableValue(num)
                 } else {
-                    // see if its in the times array
-                    // if not calculate it
-                    // if this gives an error then return none
-                    ValueTypes::EditableNoValue
+                    if let Some(num) = event_graph.calculate_time(j, i) {
+                        ValueTypes::UneditableValue(num)
+                    } else {
+                        ValueTypes::EditableNoValue
+                    }                    
                 };
                 html!(<td><NumberInput value={value} onchange={on_change} onclick={on_click} /></td>)
             }).collect::<Html>()
@@ -193,12 +198,15 @@ pub fn event_graph_widget() -> Html {
                 ..
             } = cloned_state.deref().clone();
             if let (Some((e1, t1)), Some((e2, t2))) = (clicked_time, control_clicked_time) {
-                let val = event_graph.get_delay(t1, e1, t2, e2);
-                log!("Try to get the delay: ", format!("{:?}", val));
-                if let Ok(num) = val {
-                    ValueTypes::UneditableValue(num)
+                log!("Try to get the delay");
+                if let Some(num) = event_graph.lookup_delay(t1, e1, t2, e2) {
+                    ValueTypes::EditableValue(num)
                 } else {
-                    ValueTypes::EditableNoValue
+                    if let Some(num) = event_graph.calculate_delay(t1, delays::Event::Event(e1), t2, delays::Event::Event(e2)) {
+                        ValueTypes::UneditableValue(num)
+                    } else {
+                        ValueTypes::EditableNoValue
+                    }
                 }
             } else {
                 ValueTypes::UneditableNoValue
@@ -215,7 +223,7 @@ pub fn event_graph_widget() -> Html {
 
             if let (Some((e1, t1)), Some((e2, t2))) = (clicked_time, control_clicked_time) {
                 if let Some(n) = num {
-                    event_graph.add_delay(t1, e1, t2, e2, n)
+                    event_graph.update_delay(t1, e1, t2, e2, n);
                 } else {
                     log!("need to delete delay")
                     // delete the delay
