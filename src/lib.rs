@@ -1,5 +1,5 @@
 use petgraph::algo;
-use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::stable_graph::{StableGraph, NodeIndex};
 use petgraph::visit::Time;
 use std::collections::HashMap;
 use csv;
@@ -37,7 +37,7 @@ type TimeKey<T, E> = (Timebase<T>, Event<E>);
 #[derive(Debug, Clone)]
 pub struct EventGraph<T, E> {
     map: HashMap<(Timebase<T>, Event<E>), NodeIndex>,
-    graph: DiGraph<Option<f64>, f64>,
+    graph: StableGraph<Option<f64>, f64>,
 }
 
 impl<T: Hash + PartialEq + Eq + Clone, E: Hash + PartialEq + Eq + Clone> EventGraph<T, E> {
@@ -45,7 +45,7 @@ impl<T: Hash + PartialEq + Eq + Clone, E: Hash + PartialEq + Eq + Clone> EventGr
     /// Create an empty `EventGraph`
     pub fn new() -> Self {
         let map = HashMap::<TimeKey<T, E>, NodeIndex>::new();
-        let graph = DiGraph::<Option<f64>, f64>::new();
+        let graph = StableGraph::<Option<f64>, f64>::new();
         Self {map, graph}
     }
 
