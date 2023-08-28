@@ -1,6 +1,5 @@
 use petgraph::algo;
 use petgraph::stable_graph::{StableGraph, NodeIndex};
-use petgraph::visit::Time;
 use std::collections::HashMap;
 use csv;
 use std::hash::Hash;
@@ -153,7 +152,7 @@ impl<T: Hash + PartialEq + Eq + Clone, E: Hash + PartialEq + Eq + Clone> EventGr
         if let Some(_) = self.lookup_delay(timebase_1.clone(), event_1.clone(), timebase_2.clone(), event_2.clone()) {
             return Err(Errors::AlreadyExists)
         }
-        if let Some(delay) = self.calculate_delay(timebase_1.clone(), Event::Event(event_1.clone()), timebase_2.clone(), Event::Event(event_2.clone())) {
+        if let Some(_) = self.calculate_delay(timebase_1.clone(), Event::Event(event_1.clone()), timebase_2.clone(), Event::Event(event_2.clone())) {
             // panic!("apparently theres a delay of {}", delay);
             return Err(Errors::AlreadyConstrained(()))
         }
