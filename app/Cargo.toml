@@ -11,4 +11,4 @@ stylist = {version="0.11", features = ["yew_integration"]}
 gloo = "0.9.0"
 wasm-bindgen = "0.2.87"
 web-sys = {version="0.3.64", features = ["HtmlInputElement"]}
-delays = { path = "../delays" }
+delays = { path = ".." }
