@@ -457,6 +457,25 @@ mod tests {
     }
 
     #[test]
+    ///  0  100
+    ///  |---|--->
+    ///   \0  \?
+    ///    |---|--->
+    ///   100 200
+    fn different_timebase_strings_add_delay_first() {
+        // create event graph
+        let mut event_graph = EventGraph::new();
+        event_graph.add_delay("tb1", "e1", "tb2", "e1", 0.0).unwrap();
+        
+        event_graph.add_time("tb1", "e1", 0.0).unwrap();
+        event_graph.add_time("tb1", "e2", 100.0).unwrap();
+        event_graph.add_time("tb2", "e1", 100.0).unwrap();
+        event_graph.add_time("tb2", "e2", 200.0).unwrap();
+
+        assert_eq!(event_graph.get_delay("tb1", "e2", "tb2", "e2").unwrap(), 0.0);
+    }
+
+    #[test]
     fn same_timebase_strings() {
         // create event graph
         let mut event_graph = EventGraph::new();
