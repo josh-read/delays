@@ -4,21 +4,21 @@ use std::rc::Rc;
 
 use yew::prelude::*;
 use gloo::console::log;
-use delays::EventGraph;
+use delays::DelayGraph;
 
 use super::number_input::{NumberInput, ValueTypes};
 use super::text_input::TextInput;
 
 #[derive(Clone)]
-struct EventGraphData {
+struct DelayGraphData {
     events: Vec<String>,
     timebases: Vec<String>,
     clicked_time: Option<(usize, usize)>,
     control_clicked_time: Option<(usize, usize)>,
-    event_graph: EventGraph<usize, usize>,
+    event_graph: DelayGraph,
 }
 
-impl EventGraphData {
+impl DelayGraphData {
     pub fn new(n_events: usize, n_timebases: usize) -> Self {
         let events: Vec<String> = (0..n_events)
         .map(|i| format!("event {}", i).to_owned())
@@ -26,20 +26,20 @@ impl EventGraphData {
         let timebases: Vec<String> = (0..n_timebases)
         .map(|i| format!("timebase {}", i).to_owned())
         .collect();
-        let mut event_graph = EventGraph::new();
-        EventGraphData { events, timebases, clicked_time: None, control_clicked_time: None, event_graph }
+        let mut event_graph = DelayGraph::new();
+        DelayGraphData { events, timebases, clicked_time: None, control_clicked_time: None, event_graph }
     }
 }
 
-#[function_component(EventGraphWidget)]
+#[function_component(DelayGraphWidget)]
 pub fn event_graph_widget() -> Html {
 
-    let event_graph_data = EventGraphData::new(6, 3);
+    let event_graph_data = DelayGraphData::new(6, 3);
     let state = use_state(|| event_graph_data);
 
     let cloned_state = state.clone();
     let time_html = {
-        let EventGraphData {
+        let DelayGraphData {
             events,
             timebases,
             ..
@@ -51,7 +51,7 @@ pub fn event_graph_widget() -> Html {
            let on_change = Callback::from(move |text: String| {
                 let mut events = cloned_state.events.to_owned();
                 events[i] = text;
-                cloned_state.set( EventGraphData {
+                cloned_state.set( DelayGraphData {
                     events,
                     ..cloned_state.deref().clone()
                 })
@@ -66,7 +66,7 @@ pub fn event_graph_widget() -> Html {
             let on_change = Callback::from(move |text: String| {
                 let mut timebases = cloned_state.timebases.to_owned();
                 timebases[j] = text;
-                cloned_state.set( EventGraphData {
+                cloned_state.set( DelayGraphData {
                     timebases,
                     ..cloned_state.deref().clone()
                 })
@@ -81,7 +81,7 @@ pub fn event_graph_widget() -> Html {
                 // create a callback for when time is updated
                 let cloned_state = state.clone();
                 let on_change = Callback::from(move |num| {
-                    let EventGraphData {
+                    let DelayGraphData {
                         mut event_graph,
                         ..
                     } = cloned_state.deref().clone();
@@ -95,7 +95,7 @@ pub fn event_graph_widget() -> Html {
                         event_graph.remove_time(j, i);
                     }
                     cloned_state.set(
-                        EventGraphData {
+                        DelayGraphData {
                             event_graph,
                             ..cloned_state.deref().clone()
                         }
@@ -107,14 +107,14 @@ pub fn event_graph_widget() -> Html {
                 let on_click = Callback::from(move |event: MouseEvent| {
                     if event.meta_key() {
                         cloned_state.set(
-                            EventGraphData {
+                            DelayGraphData {
                                 control_clicked_time: Some((i, j)),
                                 ..cloned_state.deref().clone()
                             }
                         )
                     } else {
                         cloned_state.set(
-                            EventGraphData {
+                            DelayGraphData {
                                 clicked_time: Some((i, j)),
                                 control_clicked_time: None,
                                 ..cloned_state.deref().clone()
@@ -124,13 +124,13 @@ pub fn event_graph_widget() -> Html {
                 });
 
                 let cloned_state = state.clone();
-                let EventGraphData {
+                let DelayGraphData {
                     mut event_graph,
                     ..
                 } = cloned_state.deref().clone();
                 // Get the value to display
                 let value = if let Some(num) = event_graph.lookup_time(j, i) {
-                    ValueTypes::EditableValue(num)
+                    ValueTypes::EditableValue(*num)
                 } else {
                     if let Some(num) = event_graph.calculate_time(j, i) {
                         ValueTypes::UneditableValue(num)
@@ -156,7 +156,7 @@ pub fn event_graph_widget() -> Html {
 
     let cloned_state = state.clone();
     let delay_html = {
-        let EventGraphData {
+        let DelayGraphData {
             events,
             timebases,
             clicked_time,
@@ -186,7 +186,7 @@ pub fn event_graph_widget() -> Html {
 
         let cloned_state = state.clone();
         let value = {
-            let EventGraphData {
+            let DelayGraphData {
                 clicked_time,
                 control_clicked_time,
                 event_graph,
@@ -195,7 +195,7 @@ pub fn event_graph_widget() -> Html {
             if let (Some((e1, t1)), Some((e2, t2))) = (clicked_time, control_clicked_time) {
                 log!("Try to get the delay");
                 if let Some(num) = event_graph.lookup_delay(t1, e1, t2, e2) {
-                    ValueTypes::EditableValue(num)
+                    ValueTypes::EditableValue(*num)
                 } else {
                     if let Some(num) = event_graph.calculate_delay(t1, delays::Event::Event(e1), t2, delays::Event::Event(e2)) {
                         ValueTypes::UneditableValue(num)
@@ -209,7 +209,7 @@ pub fn event_graph_widget() -> Html {
         };
         let cloned_state = state.clone();
         let onchange = Callback::from(move |num| {
-            let EventGraphData {
+            let DelayGraphData {
                 clicked_time,
                 control_clicked_time,
                 mut event_graph,
@@ -225,7 +225,7 @@ pub fn event_graph_widget() -> Html {
             };
             
             cloned_state.set(
-                EventGraphData {
+                DelayGraphData {
                     event_graph,
                     ..cloned_state.deref().clone()
                 }

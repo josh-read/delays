@@ -2,7 +2,7 @@ use gloo::console::log;
 use yew::prelude::*;
 
 pub mod components;
-use crate::components::event_graph_widget::EventGraphWidget;
+use crate::components::event_graph_widget::DelayGraphWidget;
 
 
 #[function_component(Header)]
@@ -15,7 +15,7 @@ fn header() -> Html {
 #[function_component(Body)]
 fn body() -> Html {
     html! {
-        <EventGraphWidget />
+        <DelayGraphWidget />
     }
 }
 
