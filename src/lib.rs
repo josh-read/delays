@@ -347,6 +347,26 @@ mod tests {
         event_graph.add_delay(1, 2, 2, 2, 0.0).unwrap();
         assert_eq!(event_graph.get_delay(1, 1, 1, 2).unwrap(), 100.0);
     }
+  
+    #[test]
+    ///  0   ?
+    ///  |---|--->
+    ///   \0  \0
+    ///    |---|--->
+    ///   100 200
+    fn different_timebase_event_integers_add_delays_first() {
+        // create event graph
+        let mut event_graph = DelayGraph::new();
+
+        event_graph.add_delay(1, 1, 2, 1, 0.0).unwrap();
+        event_graph.add_delay(1, 2, 2, 2, 0.0).unwrap();
+      
+        event_graph.add_time(1, 1, 0.0).unwrap();
+        event_graph.add_time(2, 1, 100.0).unwrap();
+        event_graph.add_time(2, 2, 200.0).unwrap();
+      
+        assert_eq!(event_graph.get_delay(1, 1, 1, 2).unwrap(), 100.0);
+    }
 
     // #[test]
     // ///  0  100
