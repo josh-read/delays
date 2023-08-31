@@ -171,7 +171,10 @@ impl DelayGraph {
         let start_key = TimebaseEventKey {timebase: timebase_1, event: event_1};
         let finish_key = TimebaseEventKey {timebase: timebase_2, event: event_2};
         // find all possible paths from start node to finish node
-        let paths: Vec<Vec<TimebaseEventKey>> = algo::all_simple_paths(&self.graph, start_key, finish_key, 0, None).collect();
+        if self.graph.node_count() < 1 {
+            return None
+        }
+        let paths = algo::all_simple_paths(&self.graph, start_key, finish_key, 0, None).collect::<Vec<Vec<TimebaseEventKey>>>();
         if paths.len() == 1 {
             let path = &paths[0];
             let mut sum = 0.0;
@@ -293,7 +296,6 @@ mod tests {
         let mut event_graph = DelayGraph::new();
         event_graph.add_time(1, 1, 500.0).unwrap();
         event_graph.add_time(1, 2, 1000.0).unwrap();
-        println!("{:?}", event_graph);
         assert_eq!(event_graph.get_delay(1, 1, 1, 2).unwrap(), 500.0);
     }
 
