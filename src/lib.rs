@@ -256,22 +256,7 @@ impl DelayGraph {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // #[test]
-    // fn create_event_graph() {
-    //     // create event graph
-    //     let mut event_graph = DelayGraph::new();
-    //     event_graph.add_time("experiment", "current start", 0.0).unwrap();
-    //     // event_graph.add_event("experiment", "movement start", 1450.0);
-    //     event_graph.add_time("scope", "current start", 2500.0).unwrap();
-    //     event_graph.add_time("scope", "aux out", 30.0).unwrap();
-    //     event_graph.add_time("pdv scope", "movement start", 2700.0).unwrap();
-    //     // add delays
-    //     event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0).unwrap();
-    //     event_graph.add_delay("scope", "aux out", "pdv scope", "t0", 100.0).unwrap();
-    //     event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0).unwrap();
-    // }
-
+    
     #[test]
     fn update_time() {
         let mut event_graph = DelayGraph::new();
@@ -367,67 +352,87 @@ mod tests {
       
         assert_eq!(event_graph.get_delay(1, 1, 1, 2).unwrap(), 100.0);
     }
+}
 
-    // #[test]
-    // ///  0  100
-    // ///  |---|--->
-    // ///   \0  \?
-    // ///    |---|--->
-    // ///   100 200
-    // fn different_timebase_strings() {
-    //     // create event graph
-    //     let mut event_graph = EventGraph::new();
-    //     event_graph.add_time("tb1", "e1", 0.0).unwrap();
-    //     event_graph.add_time("tb1", "e2", 100.0).unwrap();
-    //     event_graph.add_time("tb2", "e1", 100.0).unwrap();
-    //     event_graph.add_time("tb2", "e2", 200.0).unwrap();
+// #[cfg(test)]
+mod str_tests {
+    use super::*;
+    
+    #[test]
+    fn create_event_graph() {
+        // create event graph
+        let mut event_graph = DelayGraph::new();
+        event_graph.add_time("experiment", "current start", 0.0).unwrap();
+        // event_graph.add_event("experiment", "movement start", 1450.0);
+        event_graph.add_time("scope", "current start", 2500.0).unwrap();
+        event_graph.add_time("scope", "aux out", 30.0).unwrap();
+        event_graph.add_time("pdv scope", "movement start", 2700.0).unwrap();
+        // add delays
+        event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0).unwrap();
+        event_graph.add_delay("scope", "aux out", "pdv scope", "t0", 100.0).unwrap();
+        event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0).unwrap();
+    }
+    
+    #[test]
+    ///  0  100
+    ///  |---|--->
+    ///   \0  \?
+    ///    |---|--->
+    ///   100 200
+    fn different_timebase_strings() {
+        // create event graph
+        let mut event_graph = EventGraph::new();
+        event_graph.add_time("tb1", "e1", 0.0).unwrap();
+        event_graph.add_time("tb1", "e2", 100.0).unwrap();
+        event_graph.add_time("tb2", "e1", 100.0).unwrap();
+        event_graph.add_time("tb2", "e2", 200.0).unwrap();
 
-    //     event_graph.add_delay("tb1", "e1", "tb2", "e1", 0.0).unwrap();
-    //     assert_eq!(event_graph.get_delay("tb1", "e2", "tb2", "e2").unwrap(), 0.0);
-    // }
+        event_graph.add_delay("tb1", "e1", "tb2", "e1", 0.0).unwrap();
+        assert_eq!(event_graph.get_delay("tb1", "e2", "tb2", "e2").unwrap(), 0.0);
+    }
 
-    // #[test]
-    // fn same_timebase_strings() {
-    //     // create event graph
-    //     let mut event_graph = EventGraph::new();
-    //     event_graph.add_time("timebase", "event 1", 500.0).unwrap();
-    //     event_graph.add_time("timebase", "event 2", 1000.0).unwrap();
-    //     assert_eq!(event_graph.get_delay("timebase", "event 1", "timebase", "event 2").unwrap(), 500.0);
-    // }
+    #[test]
+    fn same_timebase_strings() {
+        // create event graph
+        let mut event_graph = EventGraph::new();
+        event_graph.add_time("timebase", "event 1", 500.0).unwrap();
+        event_graph.add_time("timebase", "event 2", 1000.0).unwrap();
+        assert_eq!(event_graph.get_delay("timebase", "event 1", "timebase", "event 2").unwrap(), 500.0);
+    }
 
-    // #[test]
-    // fn real_example() {
-    //     // create event graph
-    //     let mut event_graph = EventGraph::new();
-    //     event_graph.add_time("experiment", "current start", 0.0).unwrap();
-    //     event_graph.add_time("scope", "current start", 2500.0).unwrap();
-    //     event_graph.add_time("scope", "aux out", 30.0).unwrap();
-    //     event_graph.add_time("pdv scope", "aux out", 0.0).unwrap();
-    //     event_graph.add_time("pdv scope", "movement start", 2700.0).unwrap();
-    //     // add delays
-    //     event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0).unwrap();
-    //     event_graph.add_delay("scope", "aux out", "pdv scope", "aux out", 100.0).unwrap();
-    //     event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0).unwrap();
+    #[test]
+    fn real_example() {
+        // create event graph
+        let mut event_graph = EventGraph::new();
+        event_graph.add_time("experiment", "current start", 0.0).unwrap();
+        event_graph.add_time("scope", "current start", 2500.0).unwrap();
+        event_graph.add_time("scope", "aux out", 30.0).unwrap();
+        event_graph.add_time("pdv scope", "aux out", 0.0).unwrap();
+        event_graph.add_time("pdv scope", "movement start", 2700.0).unwrap();
+        // add delays
+        event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0).unwrap();
+        event_graph.add_delay("scope", "aux out", "pdv scope", "aux out", 100.0).unwrap();
+        event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0).unwrap();
 
-    //     let delay = event_graph.get_delay("experiment", "current start", "experiment", "movement start").unwrap();
-    //     assert_eq!(delay, 1680.0);
-    // }
+        let delay = event_graph.get_delay("experiment", "current start", "experiment", "movement start").unwrap();
+        assert_eq!(delay, 1680.0);
+    }
 
-    // #[test]
-    // fn create_from_csv() {
-    //     // manually create an event graph
-    //     let mut eg = EventGraph::new();
-    //     eg.add_time(String::from("experiment"), String::from("current start"), 0.0).unwrap();
-    //     eg.add_time(String::from("scope"), String::from("experiment"), 1550.0).unwrap();
-    //     eg.add_delay(String::from("experiment"), String::from("current start"), String::from("scope"), String::from("experiment"), 20.0).unwrap();
+    #[test]
+    fn create_from_csv() {
+        // manually create an event graph
+        let mut eg = EventGraph::new();
+        eg.add_time(String::from("experiment"), String::from("current start"), 0.0).unwrap();
+        eg.add_time(String::from("scope"), String::from("experiment"), 1550.0).unwrap();
+        eg.add_delay(String::from("experiment"), String::from("current start"), String::from("scope"), String::from("experiment"), 20.0).unwrap();
 
-    //     // create equivalent graph from csvs
-    //     let event_csv = "timebase, event, time
-    //     experiment, current start, 0
-    //     scope, experiment, 1550";
-    //     let delay_csv = "timebase_1, event_1, timebase_2, event_2, time
-    //     experiment, current start, scope, experiment, 20";
-    //     let event_graph_from_csv = EventGraph::from_csv(event_csv, delay_csv);
-    //     assert_eq!(eg.map, event_graph_from_csv.map)
-    // }
+        // create equivalent graph from csvs
+        let event_csv = "timebase, event, time
+        experiment, current start, 0
+        scope, experiment, 1550";
+        let delay_csv = "timebase_1, event_1, timebase_2, event_2, time
+        experiment, current start, scope, experiment, 20";
+        let event_graph_from_csv = EventGraph::from_csv(event_csv, delay_csv);
+        assert_eq!(eg.map, event_graph_from_csv.map)
+    }
 }
