@@ -1,7 +1,5 @@
 use petgraph::algo;
 use petgraph::graphmap::DiGraphMap;
-use petgraph::visit::{Bfs, Dfs};
-use csv;
 use std::hash::Hash;
 
 #[derive(Debug)]
@@ -32,7 +30,7 @@ impl TimebaseEventKey {
     }
 
     pub fn t0_key(&self) -> Self {
-        let Self {timebase, event} = self;
+        let Self {timebase, event: _} = self;
         TimebaseEventKey::new_t0(*timebase)
     }
 }
@@ -48,10 +46,6 @@ impl DelayGraph {
     pub fn new() -> Self {
         let graph = DiGraphMap::<TimebaseEventKey, f64>::new();
         Self {graph}
-    }
-
-    fn time_exists(&self, key: TimebaseEventKey) -> bool {
-        self.graph.contains_node(key)
     }
 
     /// Directly add a time to the graph, 
