@@ -105,7 +105,7 @@ pub fn event_graph_widget() -> Html {
                 // create a callback record clicked and control clicked boxes
                 let cloned_state = state.clone();
                 let on_click = Callback::from(move |event: MouseEvent| {
-                    if event.meta_key() {
+                    if event.meta_key() || event.ctrl_key() || event.shift_key() {
                         cloned_state.set(
                             DelayGraphData {
                                 control_clicked_time: Some((i, j)),
