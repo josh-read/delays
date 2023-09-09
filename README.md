@@ -1,2 +1,4 @@
 # delays
-Tool for temporally placing events in different frames of reference.
+
+A Rust-based library for calculating experimental delays
+with a Web App and Python bindings.
