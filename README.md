@@ -16,3 +16,19 @@ These conditions are both typically true for very short lived experiments which 
 The tools offered here are designed to target two key scenarios:
 - Setting delay pulse generators to trigger detectors at the right time to record over a time of interest.
 - Syncing data to the experimental frame of reference.
+
+## Features
+
+- Core Rust Library:
+  - Provides the Timelines struct, a user-friendly abstraction over a graph (network) of delays.
+  - Timelines struct features chacked entry, such that it is impossible to overconstrain an event on a timebase.
+  - Uses petgraph library for graph operations
+
+- Web App:
+  - User-friendly interface for inputting data and performing calculations.
+  - Visualization of timebase conversions.
+  - Export functionality for use in Python analysis.
+
+- Python Library:
+  - Compiled with PyO3 for seamless integration with Python.
+  - Provides access to the core library's functionality for experimental analysis.
