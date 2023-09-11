@@ -32,3 +32,13 @@ The tools offered here are designed to target two key scenarios:
 - Python Library:
   - Compiled with PyO3 for seamless integration with Python.
   - Provides access to the core library's functionality for experimental analysis.
+ 
+## Getting Started
+
+### Installation
+
+- Rust library: install with cargo
+- Web app: no installation required
+- Python library: coming soon
+
+### Usage
