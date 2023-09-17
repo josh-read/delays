@@ -3,3 +3,6 @@ lib:
 
 app:
 	trunk build --release --dist docs --public-url delays/ --features app-deps
+
+serve:
+	trunk serve --features app-deps --open
