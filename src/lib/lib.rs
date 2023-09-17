@@ -317,4 +317,22 @@ mod tests {
       
         assert_eq!(event_graph.get_delay(1, 1, 1, 2).unwrap(), 100.0);
     }
+
+    #[test]
+    fn real_example() {
+        // create event graph
+        let mut event_graph = Timelines::new();
+        event_graph.add_time("experiment", "current start", 0.0).unwrap();
+        event_graph.add_time("scope", "current start", 2500.0).unwrap();
+        event_graph.add_time("scope", "aux out", 30.0).unwrap();
+        event_graph.add_time("pdv scope", "aux out", 0.0).unwrap();
+        event_graph.add_time("pdv scope", "movement start", 2700.0).unwrap();
+        // add delays
+        event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0).unwrap();
+        event_graph.add_delay("scope", "aux out", "pdv scope", "aux out", 100.0).unwrap();
+        event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0).unwrap();
+
+        let delay = event_graph.get_delay("experiment", "current start", "experiment", "movement start").unwrap();
+        assert_eq!(delay, 1680.0);
+    }
 }
