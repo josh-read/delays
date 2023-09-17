@@ -8,6 +8,8 @@ pub enum Errors {
     AlreadyConstrained(()),
 }
 
+type TimebaseIdx = usize;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum EventIdx {
     T(usize),
@@ -16,7 +18,7 @@ pub enum EventIdx {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct TimelinesIdx {
-    timebase_idx: usize,
+    timebase_idx: TimebaseIdx,
     event_idx: EventIdx,
 }
 
