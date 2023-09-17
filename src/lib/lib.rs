@@ -1,5 +1,6 @@
 use petgraph::algo;
 use petgraph::graphmap::DiGraphMap;
+use petgraph::graphmap::NodeTrait;
 use std::hash::Hash;
 
 #[derive(Debug)]
@@ -8,26 +9,24 @@ pub enum Errors {
     AlreadyConstrained(()),
 }
 
-type TimebaseIdx = usize;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum EventIdx {
-    T(usize),
+pub enum EventIdx<T: NodeTrait> {
+    T(T),
     T0
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-struct TimelinesIdx {
-    timebase_idx: TimebaseIdx,
-    event_idx: EventIdx,
+struct TimelinesIdx<T: NodeTrait> {
+    timebase_idx: T,
+    event_idx: EventIdx<T>,
 }
 
-impl TimelinesIdx {
-    pub fn new(timebase: usize, event: usize) -> Self {
+impl<T: NodeTrait> TimelinesIdx<T> {
+    pub fn new(timebase: T, event: T) -> Self {
         Self { timebase_idx: timebase, event_idx: EventIdx::T(event)}
     }
 
-    pub fn new_t0(timebase: usize) -> Self {
+    pub fn new_t0(timebase: T) -> Self {
         Self { timebase_idx: timebase, event_idx: EventIdx::T0}
     }
 
@@ -38,37 +37,37 @@ impl TimelinesIdx {
 }
 
 #[derive(Debug, Clone)]
-pub struct Timelines {
-    graph: DiGraphMap<TimelinesIdx, f64>,
+pub struct Timelines<T: NodeTrait> {
+    graph: DiGraphMap<TimelinesIdx<T>, f64>,
 }
 
-impl Timelines {
+impl<T: NodeTrait> Timelines<T> {
 
     /// Create an empty `Timelines`
     pub fn new() -> Self {
-        let graph = DiGraphMap::<TimelinesIdx, f64>::new();
+        let graph = DiGraphMap::<TimelinesIdx<T>, f64>::new();
         Self {graph}
     }
 
     /// Directly add a time to the graph, 
     /// no safety checks are performed here.
     /// Assumes that the T0 node already exists.
-    fn add_time_unchecked(&mut self, key: TimelinesIdx, time: f64) {
+    fn add_time_unchecked(&mut self, key: TimelinesIdx<T>, time: f64) {
         // add the node
         let t0_key = key.t0();
         self.graph.add_edge(t0_key, key, time);
         self.graph.add_edge(key, t0_key, -time);
     }
 
-    pub fn add_time(&mut self, timebase: usize, event: usize, time: f64) -> Result<(), Errors> {
+    pub fn add_time(&mut self, timebase: T, event: T, time: f64) -> Result<(), Errors> {
         let key = TimelinesIdx::new(timebase, event);
         // Check if we can 'get' the time
         // try to 'look it up'
-        if let Some(_) = self.lookup_time(timebase.clone(), event.clone()) {
+        if let Some(_) = self.lookup_time(timebase, event) {
             return Err(Errors::AlreadyExists)
         };
         // try to calculate it
-        if let Some(_) = self.calculate_time(timebase.clone(), event.clone()) {
+        if let Some(_) = self.calculate_time(timebase, event) {
             return Err(Errors::AlreadyConstrained(()))
         };
         // if both are None then we need to add it, don't need to check existence as it would've
@@ -78,7 +77,7 @@ impl Timelines {
         Ok(())
     }
 
-    pub fn update_time(&mut self, timebase: usize, event: usize, time: f64) -> Result<(), Errors> {
+    pub fn update_time(&mut self, timebase: T, event: T, time: f64) -> Result<(), Errors> {
         if let Err(e) = self.add_time(timebase, event, time) {
             match e {
                 Errors::AlreadyConstrained(_) => Err(Errors::AlreadyConstrained(())),
@@ -97,7 +96,7 @@ impl Timelines {
         }
     }
 
-    pub fn remove_time(&mut self, timebase: usize, event: usize) -> Result<(), Errors> {
+    pub fn remove_time(&mut self, timebase: T, event: T) -> Result<(), Errors> {
         let t0_key = TimelinesIdx::new_t0(timebase);
         let key = TimelinesIdx::new(timebase, event);
 
@@ -107,7 +106,7 @@ impl Timelines {
         Ok(())
     }
 
-    pub fn add_delay(&mut self, timebase_1: usize, event_1: usize, timebase_2: usize, event_2: usize, delay: f64) -> Result<(), Errors> {
+    pub fn add_delay(&mut self, timebase_1: T, event_1: T, timebase_2: T, event_2: T, delay: f64) -> Result<(), Errors> {
         if let Some(_) = self.lookup_delay(timebase_1, event_1, timebase_2, event_2) {
             return Err(Errors::AlreadyExists)
         }
@@ -125,7 +124,7 @@ impl Timelines {
         Ok(())
     }
 
-    pub fn update_delay(&mut self, timebase_1: usize, event_1: usize, timebase_2: usize, event_2: usize, delay: f64) -> Result<(), Errors> {
+    pub fn update_delay(&mut self, timebase_1: T, event_1: T, timebase_2: T, event_2: T, delay: f64) -> Result<(), Errors> {
         if let Err(e) = self.add_delay(timebase_1, event_1, timebase_2, event_2, delay) {
             match e {
                 Errors::AlreadyConstrained(_) => Err(Errors::AlreadyConstrained(())),
@@ -146,7 +145,7 @@ impl Timelines {
         }
     }
 
-    pub fn remove_delay(&mut self, timebase_1: usize, event_1: usize, timebase_2: usize, event_2: usize) -> Result<(), Errors> {
+    pub fn remove_delay(&mut self, timebase_1: T, event_1: T, timebase_2: T, event_2: T) -> Result<(), Errors> {
         let key_1 = TimelinesIdx::new(timebase_1, event_1);
         let key_2 = TimelinesIdx::new(timebase_2, event_2);
         
@@ -156,13 +155,13 @@ impl Timelines {
         Ok(())
     }
 
-    pub fn lookup_delay(&self, timebase_1: usize, event_1: usize, timebase_2: usize, event_2: usize) -> Option<&f64> {
+    pub fn lookup_delay(&self, timebase_1: T, event_1: T, timebase_2: T, event_2: T) -> Option<&f64> {
         let key_1 = TimelinesIdx::new(timebase_1, event_1);
         let key_2 = TimelinesIdx::new(timebase_2, event_2);
         self.graph.edge_weight(key_1, key_2)
     }
 
-    fn calculate_delay(&self, timebase_1: usize, event_1: EventIdx, timebase_2: usize, event_2: EventIdx) -> Option<f64> {
+    fn calculate_delay(&self, timebase_1: T, event_1: EventIdx<T>, timebase_2: T, event_2: EventIdx<T>) -> Option<f64> {
         // generate keys to specify path
         let start_key = TimelinesIdx { timebase_idx: timebase_1, event_idx: event_1};
         let finish_key = TimelinesIdx { timebase_idx: timebase_2, event_idx: event_2};
@@ -170,7 +169,7 @@ impl Timelines {
         if self.graph.node_count() < 1 {
             return None
         }
-        let paths = algo::all_simple_paths(&self.graph, start_key, finish_key, 0, None).collect::<Vec<Vec<TimelinesIdx>>>();
+        let paths = algo::all_simple_paths(&self.graph, start_key, finish_key, 0, None).collect::<Vec<Vec<TimelinesIdx<T>>>>();
         if paths.len() == 1 {
             let path = &paths[0];
             let mut sum = 0.0;
@@ -183,7 +182,7 @@ impl Timelines {
         }
     }
 
-    pub fn get_delay(&self, timebase_1: usize, event_1: usize, timebase_2: usize, event_2: usize) -> Option<f64> {
+    pub fn get_delay(&self, timebase_1: T, event_1: T, timebase_2: T, event_2: T) -> Option<f64> {
         if let Some(delay) = self.lookup_delay(timebase_1, event_1, timebase_2, event_2) {
             Some(*delay)
         } else {
@@ -195,18 +194,18 @@ impl Timelines {
         }
     }
 
-    pub fn lookup_time(&self, timebase: usize, event: usize) -> Option<&f64> {
+    pub fn lookup_time(&self, timebase: T, event: T) -> Option<&f64> {
         let key = TimelinesIdx::new(timebase, event);
         let t0_key = TimelinesIdx::new_t0(timebase);
         self.graph.edge_weight(t0_key, key)
     }
 
-    pub fn calculate_time(&self, timebase: usize, event: usize) -> Option<f64> {
+    pub fn calculate_time(&self, timebase: T, event: T) -> Option<f64> {
         let event = EventIdx::T(event);
         self.calculate_delay(timebase, EventIdx::T0, timebase, event)
     }
 
-    pub fn get_time(&self, timebase: usize, event: usize) -> Option<f64> {
+    pub fn get_time(&self, timebase: T, event: T) -> Option<f64> {
         if let Some(time) = self.lookup_time(timebase, event) {
             Some(*time)
         } else {
