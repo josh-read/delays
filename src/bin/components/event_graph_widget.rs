@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use yew::prelude::*;
 use gloo::console::log;
-use delays::DelayGraph;
+use delays::Timelines;
 
 use super::number_input::{NumberInput, ValueTypes};
 use super::text_input::TextInput;
@@ -15,7 +15,7 @@ struct DelayGraphData {
     timebases: Vec<String>,
     clicked_time: Option<(usize, usize)>,
     control_clicked_time: Option<(usize, usize)>,
-    event_graph: DelayGraph,
+    event_graph: Timelines,
 }
 
 impl DelayGraphData {
@@ -26,7 +26,7 @@ impl DelayGraphData {
         let timebases: Vec<String> = (0..n_timebases)
         .map(|i| format!("timebase {}", i).to_owned())
         .collect();
-        let mut event_graph = DelayGraph::new();
+        let mut event_graph = Timelines::new();
         DelayGraphData { events, timebases, clicked_time: None, control_clicked_time: None, event_graph }
     }
 }
@@ -197,7 +197,7 @@ pub fn event_graph_widget() -> Html {
                 if let Some(num) = event_graph.lookup_delay(t1, e1, t2, e2) {
                     ValueTypes::EditableValue(*num)
                 } else {
-                    if let Some(num) = event_graph.calculate_delay(t1, delays::Event::Event(e1), t2, delays::Event::Event(e2)) {
+                    if let Some(num) = event_graph.calculate_delay(t1, delays::EventIdx::T(e1), t2, delays::EventIdx::T(e2)) {
                         ValueTypes::UneditableValue(num)
                     } else {
                         ValueTypes::EditableNoValue
