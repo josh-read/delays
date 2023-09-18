@@ -2,46 +2,20 @@ use petgraph::algo;
 use petgraph::graphmap::DiGraphMap;
 use petgraph::graphmap::NodeTrait;
 use std::hash::Hash;
+use errors::Errors;
+use indexing::TimelinesIdx;
 
-#[derive(Debug)]
-pub enum Errors {
-    AlreadyExists,
-    AlreadyConstrained(()),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum EventIdx<T: NodeTrait> {
-    T(T),
-    T0
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-struct TimelinesIdx<T: NodeTrait> {
-    timebase_idx: T,
-    event_idx: EventIdx<T>,
-}
-
-impl<T: NodeTrait> TimelinesIdx<T> {
-    pub fn new(timebase: T, event: T) -> Self {
-        Self { timebase_idx: timebase, event_idx: EventIdx::T(event)}
-    }
-
-    pub fn new_t0(timebase: T) -> Self {
-        Self { timebase_idx: timebase, event_idx: EventIdx::T0}
-    }
-
-    pub fn t0(&self) -> Self {
-        let Self { timebase_idx: timebase, event_idx: _} = self;
-        TimelinesIdx::new_t0(*timebase)
-    }
-}
+mod errors;
+mod indexing;
 
 #[derive(Debug, Clone)]
-pub struct Timelines<T: NodeTrait> {
+pub struct FastTimelines<T: NodeTrait> {
     graph: DiGraphMap<TimelinesIdx<T>, f64>,
 }
 
-impl<T: NodeTrait> Timelines<T> {
+type Timelines<T> = FastTimelines<T>;
+
+impl<T: NodeTrait> FastTimelines<T> {
 
     /// Create an empty `Timelines`
     pub fn new() -> Self {
@@ -49,11 +23,10 @@ impl<T: NodeTrait> Timelines<T> {
         Self {graph}
     }
 
-    /// Directly add a time to the graph, 
+    /// Directly add a time to the graph,
     /// no safety checks are performed here.
     /// Assumes that the T0 node already exists.
     fn add_time_unchecked(&mut self, key: TimelinesIdx<T>, time: f64) {
-        // add the node
         let t0_key = key.t0();
         self.graph.add_edge(t0_key, key, time);
         self.graph.add_edge(key, t0_key, -time);
@@ -107,10 +80,12 @@ impl<T: NodeTrait> Timelines<T> {
     }
 
     pub fn add_delay(&mut self, timebase_1: T, event_1: T, timebase_2: T, event_2: T, delay: f64) -> Result<(), Errors> {
+        let key_1 = TimelinesIdx::new(timebase_1, event_1);
+        let key_2 = TimelinesIdx::new(timebase_2, event_2);
         if let Some(_) = self.lookup_delay(timebase_1, event_1, timebase_2, event_2) {
             return Err(Errors::AlreadyExists)
         }
-        if let Some(_) = self.calculate_delay(timebase_1, EventIdx::T(event_1), timebase_2, EventIdx::T(event_2)) {
+        if let Some(_) = self.calculate_delay(key_1, key_2) {
             // panic!("apparently theres a delay of {}", delay);
             return Err(Errors::AlreadyConstrained(()))
         }
@@ -161,10 +136,10 @@ impl<T: NodeTrait> Timelines<T> {
         self.graph.edge_weight(key_1, key_2)
     }
 
-    fn calculate_delay(&self, timebase_1: T, event_1: EventIdx<T>, timebase_2: T, event_2: EventIdx<T>) -> Option<f64> {
+    fn calculate_delay(&self, key_1: TimelinesIdx<T>, key_2: TimelinesIdx<T>) -> Option<f64> {
         // generate keys to specify path
-        let start_key = TimelinesIdx { timebase_idx: timebase_1, event_idx: event_1};
-        let finish_key = TimelinesIdx { timebase_idx: timebase_2, event_idx: event_2};
+        let start_key = key_1;
+        let finish_key = key_2;
         // find all possible paths from start node to finish node
         if self.graph.node_count() < 1 {
             return None
@@ -183,10 +158,12 @@ impl<T: NodeTrait> Timelines<T> {
     }
 
     pub fn get_delay(&self, timebase_1: T, event_1: T, timebase_2: T, event_2: T) -> Option<f64> {
+        let key_1 = TimelinesIdx::new(timebase_1, event_1);
+        let key_2 = TimelinesIdx::new(timebase_2, event_2);
         if let Some(delay) = self.lookup_delay(timebase_1, event_1, timebase_2, event_2) {
             Some(*delay)
         } else {
-            if let Some(delay) = self.calculate_delay(timebase_1, EventIdx::T(event_1), timebase_2, EventIdx::T(event_2)) {
+            if let Some(delay) = self.calculate_delay(key_1, key_2) {
                 Some(delay)
             } else {
                 None
@@ -201,8 +178,9 @@ impl<T: NodeTrait> Timelines<T> {
     }
 
     pub fn calculate_time(&self, timebase: T, event: T) -> Option<f64> {
-        let event = EventIdx::T(event);
-        self.calculate_delay(timebase, EventIdx::T0, timebase, event)
+        let key = TimelinesIdx::new(timebase, event);
+        let t0_key = key.t0();
+        self.calculate_delay(t0_key, key)
     }
 
     pub fn get_time(&self, timebase: T, event: T) -> Option<f64> {
@@ -219,120 +197,4 @@ impl<T: NodeTrait> Timelines<T> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn update_time() {
-        let mut event_graph = Timelines::new();
-        // create a time
-        event_graph.add_time(1, 1, 0.).unwrap();
-        // adding the same time should fail
-        assert!(event_graph.add_time(1, 1, 10.).is_err());
-        // updating the time should work
-        event_graph.update_time(1, 1, 20.).unwrap();
-        // updating a node that doesn't exist yet should also work
-        event_graph.update_time(1, 2, 30.).unwrap();
-        // assert_eq!(event_graph.get_delay(1, 1, 1, 2).unwrap(), 10.)
-    }
-
-    #[test]
-    ///    500   1000
-    /// |---|-----|--->
-    ///      <--->
-    ///       500
-    fn same_timebase_delay_integers() {
-        // create event graph
-        let mut event_graph = Timelines::new();
-        event_graph.add_time(1, 1, 500.0).unwrap();
-        event_graph.add_time(1, 2, 1000.0).unwrap();
-        assert_eq!(event_graph.get_delay(1, 1, 1, 2).unwrap(), 500.0);
-    }
-
-    #[test]
-    ///    500   1000
-    /// |---|-----|--->
-    ///      <--->
-    ///       500
-    fn same_timebase_over_constrained_delay_integers() {
-        // create event graph
-        let mut event_graph = Timelines::new();
-        event_graph.add_time(1, 1, 500.0).unwrap();
-        event_graph.add_time(1, 2, 1000.0).unwrap();
-        assert!(event_graph.add_delay(1, 1, 1, 2, 500.0).is_err());
-    }
-
-    #[test]
-    ///  0  100
-    ///  |---|--->
-    ///   \0  \?
-    ///    |---|--->
-    ///   100 200
-    fn different_timebase_delay_integers() {
-        // create event graph
-        let mut event_graph = Timelines::new();
-        event_graph.add_time(1, 1, 0.0).unwrap();
-        event_graph.add_time(1, 2, 100.0).unwrap();
-        event_graph.add_time(2, 1, 100.0).unwrap();
-        event_graph.add_time(2, 2, 200.0).unwrap();
-
-        event_graph.add_delay(1, 1, 2, 1, 0.0).unwrap();
-        assert_eq!(event_graph.get_delay(1, 2, 2, 2).unwrap(), 0.0);
-    }
-
-    #[test]
-    ///  0   ?
-    ///  |---|--->
-    ///   \0  \0
-    ///    |---|--->
-    ///   100 200
-    fn different_timebase_event_integers() {
-        // create event graph
-        let mut event_graph = Timelines::new();
-        event_graph.add_time(1, 1, 0.0).unwrap();
-        event_graph.add_time(2, 1, 100.0).unwrap();
-        event_graph.add_time(2, 2, 200.0).unwrap();
-
-        event_graph.add_delay(1, 1, 2, 1, 0.0).unwrap();
-        event_graph.add_delay(1, 2, 2, 2, 0.0).unwrap();
-        assert_eq!(event_graph.get_delay(1, 1, 1, 2).unwrap(), 100.0);
-    }
-  
-    #[test]
-    ///  0   ?
-    ///  |---|--->
-    ///   \0  \0
-    ///    |---|--->
-    ///   100 200
-    fn different_timebase_event_integers_add_delays_first() {
-        // create event graph
-        let mut event_graph = Timelines::new();
-
-        event_graph.add_delay(1, 1, 2, 1, 0.0).unwrap();
-        event_graph.add_delay(1, 2, 2, 2, 0.0).unwrap();
-      
-        event_graph.add_time(1, 1, 0.0).unwrap();
-        event_graph.add_time(2, 1, 100.0).unwrap();
-        event_graph.add_time(2, 2, 200.0).unwrap();
-      
-        assert_eq!(event_graph.get_delay(1, 1, 1, 2).unwrap(), 100.0);
-    }
-
-    #[test]
-    fn real_example() {
-        // create event graph
-        let mut event_graph = Timelines::new();
-        event_graph.add_time("experiment", "current start", 0.0).unwrap();
-        event_graph.add_time("scope", "current start", 2500.0).unwrap();
-        event_graph.add_time("scope", "aux out", 30.0).unwrap();
-        event_graph.add_time("pdv scope", "aux out", 0.0).unwrap();
-        event_graph.add_time("pdv scope", "movement start", 2700.0).unwrap();
-        // add delays
-        event_graph.add_delay("experiment", "current start", "scope", "current start", 1500.0).unwrap();
-        event_graph.add_delay("scope", "aux out", "pdv scope", "aux out", 100.0).unwrap();
-        event_graph.add_delay("experiment", "movement start", "pdv scope", "movement start", 150.0).unwrap();
-
-        let delay = event_graph.get_delay("experiment", "current start", "experiment", "movement start").unwrap();
-        assert_eq!(delay, 1680.0);
-    }
-}
+mod tests;
