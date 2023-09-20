@@ -13,13 +13,15 @@ pub enum ValueTypes {
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct NumberInputProps {
-    pub value: ValueTypes,
+    pub value: Option<f64>,
+    pub editable: bool,
+    pub neighbors: usize,
     pub onchange: Callback<Option<f64>>,
     pub onclick: Callback<MouseEvent>,
 }
 
 #[function_component(NumberInput)]
-pub fn number_input(NumberInputProps{ value, onchange, onclick }: &NumberInputProps) -> Html {
+pub fn number_input(NumberInputProps{ value, editable, neighbors, onchange, onclick }: &NumberInputProps) -> Html {
     
     let onchange = onchange.clone();
     let onclick = onclick.clone();
@@ -45,20 +47,26 @@ pub fn number_input(NumberInputProps{ value, onchange, onclick }: &NumberInputPr
         onclick.emit(event)
     });
 
-    let (editable, val, css) = match value {
-        ValueTypes::EditableValue(num) => (true, num.to_string(), css!("background: lightgreen;")),
-        ValueTypes::UneditableValue(num) => (false, num.to_string(), css!("background: coral;")),
-        ValueTypes::EditableNoValue => (true, "".to_string(), css!("background: white;")),
-        ValueTypes::UneditableNoValue => (false, "".to_string(), css!("background: lightcoral;")),
+    let value = if let Some(n) = value {
+        n.to_string()
+    } else {
+        "".to_string()
     };
 
-    if editable {
+    let css = match neighbors {
+        0 => css!("background: white;"),
+        1 => css!("background: lightorange;"),
+        2 => css!("background: lightgreen;"),
+        _ => css!("background: green;"),
+    };
+
+    if *editable {
         html! {
-            <input class={css} value={val} onchange={updated_cloned_text_state} onclick={clicky_callback} />
+            <input class={css} value={value} onchange={updated_cloned_text_state} onclick={clicky_callback} />
         }
     } else {
         html! {
-            <input class={css} readonly={true} value={val} onchange={updated_cloned_text_state} onclick={clicky_callback} />
+            <input class={css} readonly={true} value={value} onchange={updated_cloned_text_state} onclick={clicky_callback} />
         }
     }
 }

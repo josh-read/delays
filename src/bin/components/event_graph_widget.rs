@@ -129,16 +129,17 @@ pub fn event_graph_widget() -> Html {
                     ..
                 } = cloned_state.deref().clone();
                 // Get the value to display
-                let value = if let Some(num) = event_graph.lookup_time(j, i) {
-                    ValueTypes::EditableValue(*num)
+                let (value, editable) = if let Some(num) = event_graph.lookup_time(j, i) {
+                    (Some(*num), true)
                 } else {
                     if let Some(num) = event_graph.calculate_time(j, i) {
-                        ValueTypes::UneditableValue(num)
+                        (Some(num), false)
                     } else {
-                        ValueTypes::EditableNoValue
+                        (None, true)
                     }                    
                 };
-                html!(<td><NumberInput value={value} onchange={on_change} onclick={on_click} /></td>)
+                let neighbors = event_graph.neighbors(j, i);
+                html!(<td><NumberInput value={value} editable={editable} neighbors={neighbors} onchange={on_change} onclick={on_click} /></td>)
             }).collect::<Html>()
         });
 
@@ -185,7 +186,7 @@ pub fn event_graph_widget() -> Html {
         };
 
         let cloned_state = state.clone();
-        let value = {
+        let (value, editable) = {
             let DelayGraphData {
                 clicked_time,
                 control_clicked_time,
@@ -195,18 +196,19 @@ pub fn event_graph_widget() -> Html {
             if let (Some((e1, t1)), Some((e2, t2))) = (clicked_time, control_clicked_time) {
                 log!("Try to get the delay");
                 if let Some(num) = event_graph.lookup_delay(t1, e1, t2, e2) {
-                    ValueTypes::EditableValue(*num)
+                    (Some(*num), true)
                 } else {
                     if let Some(num) = event_graph.calculate_delay(t1, delays::Event::Event(e1), t2, delays::Event::Event(e2)) {
-                        ValueTypes::UneditableValue(num)
+                        (Some(num), false)
                     } else {
-                        ValueTypes::EditableNoValue
-                    }
+                        (None, true)
+                    }                    
                 }
             } else {
-                ValueTypes::UneditableNoValue
+                (None, false)
             }
         };
+        let neighbors = 0;
         let cloned_state = state.clone();
         let onchange = Callback::from(move |num| {
             let DelayGraphData {
@@ -237,7 +239,7 @@ pub fn event_graph_widget() -> Html {
             <>
             {"From:"}{time_1_html}
             {"To:"}{time_2_html}
-            {"Delay:"}<NumberInput value={value} onchange={onchange} onclick={onclick}/>
+            {"Delay:"}<NumberInput value={value} editable={editable} neighbors={neighbors} onchange={onchange} onclick={onclick}/>
             </>
         }
     };
