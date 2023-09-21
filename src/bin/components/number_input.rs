@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
-use stylist::css;
+use stylist::{Style, css};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValueTypes {
@@ -16,12 +16,13 @@ pub struct NumberInputProps {
     pub value: Option<f64>,
     pub editable: bool,
     pub neighbors: usize,
+    pub is_connected: bool,
     pub onchange: Callback<Option<f64>>,
     pub onclick: Callback<MouseEvent>,
 }
 
 #[function_component(NumberInput)]
-pub fn number_input(NumberInputProps{ value, editable, neighbors, onchange, onclick }: &NumberInputProps) -> Html {
+pub fn number_input(NumberInputProps{ value, editable, neighbors, is_connected, onchange, onclick }: &NumberInputProps) -> Html {
     
     let onchange = onchange.clone();
     let onclick = onclick.clone();
@@ -53,20 +54,27 @@ pub fn number_input(NumberInputProps{ value, editable, neighbors, onchange, oncl
         "".to_string()
     };
 
-    let css = match neighbors {
-        0 => css!("background: white;"),
-        1 => css!("background: lightorange;"),
-        2 => css!("background: lightgreen;"),
-        _ => css!("background: green;"),
+    let neighbors_css = match neighbors {
+        0 => "background: white;",
+        1 => "background: lightorange;",
+        2 => "background: lightgreen;",
+        _ => "background: green;",
     };
+
+    let connected_css = match is_connected {
+        true => "border-color: green;",
+        false => "",
+    };
+
+    let style_str = format!("{}\n{}", neighbors_css, connected_css);
 
     if *editable {
         html! {
-            <input class={css} value={value} onchange={updated_cloned_text_state} onclick={clicky_callback} />
+            <input style={style_str} value={value} onchange={updated_cloned_text_state} onclick={clicky_callback} />
         }
     } else {
         html! {
-            <input class={css} readonly={true} value={value} onchange={updated_cloned_text_state} onclick={clicky_callback} />
+            <input style={style_str} readonly={true} value={value} onchange={updated_cloned_text_state} onclick={clicky_callback} />
         }
     }
 }

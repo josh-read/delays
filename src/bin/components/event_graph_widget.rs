@@ -2,6 +2,7 @@ use std::borrow::BorrowMut;
 use std::ops::Deref;
 use std::rc::Rc;
 
+use web_sys::console::log;
 use yew::prelude::*;
 use gloo::console::log;
 use delays::DelayGraph;
@@ -34,7 +35,7 @@ impl DelayGraphData {
 #[function_component(DelayGraphWidget)]
 pub fn event_graph_widget() -> Html {
 
-    let event_graph_data = DelayGraphData::new(6, 3);
+    let event_graph_data = DelayGraphData::new(6, 6);
     let state = use_state(|| event_graph_data);
 
     let cloned_state = state.clone();
@@ -126,8 +127,21 @@ pub fn event_graph_widget() -> Html {
                 let cloned_state = state.clone();
                 let DelayGraphData {
                     mut event_graph,
+                    clicked_time,
                     ..
                 } = cloned_state.deref().clone();
+                // Check if it links to selected time
+                
+                let is_connected = if let Some((i_clicked, j_clicked)) = clicked_time {
+                    let delay = event_graph.calculate_delay(j, delays::Event::Event(i), j_clicked, delays::Event::Event(i_clicked));
+                    if (j, i) == (j_clicked, i_clicked) {
+                        true
+                    } else {
+                    delay.is_some()
+                    }
+                } else {
+                    false
+                };
                 // Get the value to display
                 let (value, editable) = if let Some(num) = event_graph.lookup_time(j, i) {
                     (Some(*num), true)
@@ -139,7 +153,7 @@ pub fn event_graph_widget() -> Html {
                     }                    
                 };
                 let neighbors = event_graph.neighbors(j, i);
-                html!(<td><NumberInput value={value} editable={editable} neighbors={neighbors} onchange={on_change} onclick={on_click} /></td>)
+                html!(<td><NumberInput value={value} editable={editable} neighbors={neighbors} is_connected={is_connected} onchange={on_change} onclick={on_click} /></td>)
             }).collect::<Html>()
         });
 
@@ -239,7 +253,7 @@ pub fn event_graph_widget() -> Html {
             <>
             {"From:"}{time_1_html}
             {"To:"}{time_2_html}
-            {"Delay:"}<NumberInput value={value} editable={editable} neighbors={neighbors} onchange={onchange} onclick={onclick}/>
+            {"Delay:"}<NumberInput value={value} editable={editable} neighbors={neighbors} is_connected={false} onchange={onchange} onclick={onclick}/>
             </>
         }
     };
