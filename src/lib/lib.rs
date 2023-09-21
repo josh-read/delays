@@ -215,6 +215,11 @@ impl DelayGraph {
             }
         }
     }
+
+    pub fn neighbors(&self, timebase: usize, event: usize) -> usize {
+        let key = TimebaseEventKey::new(timebase, event);
+        self.graph.neighbors(key).count()
+    }
 }
 
 #[cfg(test)]

@@ -2,6 +2,7 @@ use std::borrow::BorrowMut;
 use std::ops::Deref;
 use std::rc::Rc;
 
+use web_sys::console::log;
 use yew::prelude::*;
 use gloo::console::log;
 use delays::DelayGraph;
@@ -34,7 +35,7 @@ impl DelayGraphData {
 #[function_component(DelayGraphWidget)]
 pub fn event_graph_widget() -> Html {
 
-    let event_graph_data = DelayGraphData::new(6, 3);
+    let event_graph_data = DelayGraphData::new(6, 6);
     let state = use_state(|| event_graph_data);
 
     let cloned_state = state.clone();
@@ -126,19 +127,33 @@ pub fn event_graph_widget() -> Html {
                 let cloned_state = state.clone();
                 let DelayGraphData {
                     mut event_graph,
+                    clicked_time,
                     ..
                 } = cloned_state.deref().clone();
+                // Check if it links to selected time
+                
+                let is_connected = if let Some((i_clicked, j_clicked)) = clicked_time {
+                    let delay = event_graph.calculate_delay(j, delays::Event::Event(i), j_clicked, delays::Event::Event(i_clicked));
+                    if (j, i) == (j_clicked, i_clicked) {
+                        true
+                    } else {
+                    delay.is_some()
+                    }
+                } else {
+                    false
+                };
                 // Get the value to display
-                let value = if let Some(num) = event_graph.lookup_time(j, i) {
-                    ValueTypes::EditableValue(*num)
+                let (value, editable) = if let Some(num) = event_graph.lookup_time(j, i) {
+                    (Some(*num), true)
                 } else {
                     if let Some(num) = event_graph.calculate_time(j, i) {
-                        ValueTypes::UneditableValue(num)
+                        (Some(num), false)
                     } else {
-                        ValueTypes::EditableNoValue
+                        (None, true)
                     }                    
                 };
-                html!(<td><NumberInput value={value} onchange={on_change} onclick={on_click} /></td>)
+                let neighbors = event_graph.neighbors(j, i);
+                html!(<td><NumberInput value={value} editable={editable} neighbors={neighbors} is_connected={is_connected} onchange={on_change} onclick={on_click} /></td>)
             }).collect::<Html>()
         });
 
@@ -185,7 +200,7 @@ pub fn event_graph_widget() -> Html {
         };
 
         let cloned_state = state.clone();
-        let value = {
+        let (value, editable) = {
             let DelayGraphData {
                 clicked_time,
                 control_clicked_time,
@@ -195,18 +210,19 @@ pub fn event_graph_widget() -> Html {
             if let (Some((e1, t1)), Some((e2, t2))) = (clicked_time, control_clicked_time) {
                 log!("Try to get the delay");
                 if let Some(num) = event_graph.lookup_delay(t1, e1, t2, e2) {
-                    ValueTypes::EditableValue(*num)
+                    (Some(*num), true)
                 } else {
                     if let Some(num) = event_graph.calculate_delay(t1, delays::Event::Event(e1), t2, delays::Event::Event(e2)) {
-                        ValueTypes::UneditableValue(num)
+                        (Some(num), false)
                     } else {
-                        ValueTypes::EditableNoValue
-                    }
+                        (None, true)
+                    }                    
                 }
             } else {
-                ValueTypes::UneditableNoValue
+                (None, false)
             }
         };
+        let neighbors = 0;
         let cloned_state = state.clone();
         let onchange = Callback::from(move |num| {
             let DelayGraphData {
@@ -237,7 +253,7 @@ pub fn event_graph_widget() -> Html {
             <>
             {"From:"}{time_1_html}
             {"To:"}{time_2_html}
-            {"Delay:"}<NumberInput value={value} onchange={onchange} onclick={onclick}/>
+            {"Delay:"}<NumberInput value={value} editable={editable} neighbors={neighbors} is_connected={false} onchange={onchange} onclick={onclick}/>
             </>
         }
     };
