@@ -5,15 +5,17 @@
 Timelines are a common way of visualising a series of events and their chronological relationship to each other.
 
 For example:
+```
         A        B
 |----|-----|---->
        100    200
-
+```
 Now in a different frame of reference the exact same series of events may appear as:
+```
         B         A
 |----|------|---->
        100     200
-
+```
 How? 
 Well the t0 of each timeline are not nescessarily synchronised. 
 Also it may take longer for the information from event A to reach the second timebase than it does for event B so the order swaps around.
