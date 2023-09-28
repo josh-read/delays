@@ -17,7 +17,7 @@ Now in a different frame of reference the exact same series of events may appear
     100   200
 ```
 How? 
-Well the t0 of each timeline are not nescessarily synchronised. 
+Well the t<sub>0</sub> of each timeline are not nescessarily synchronised. 
 Also it may take longer for the information from event A to reach the second timebase than it does for event B so the order swaps around.
 
 For example event A may be a sound and event B may be visual.
