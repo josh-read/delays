@@ -67,20 +67,76 @@ We can define some terms and write this more formally:
 - t1b: Time of event B on timebase 1
 - t2a: Time of event A on timebase 2
 - t2b: Time of event A on timebase 2
-- Δa: Information delay between timebase 1 and 2 for event A
-- Δb: Information delay between timebase 1 and 2 for event B
+- Δa12: Information delay between timebase 1 and 2 for event A
+- Δb12: Information delay between timebase 1 and 2 for event B
 
 We can use an intermediate symbol to simplify things.
 - Δ12: Delay between timebases.
 
 - t2a - t1a = Δa + Δ12
 - t2b - t1b = Δb + Δ12
-- t2a - t1a - t2b + t1b = Δa - Δb
+- (t2a - t1a) - (t2b - t1b) = Δa12 - Δb12
 
 We need 5 variables to work out a sixth.
 
-Lets apply this to a slightly more complicated example:
+Lets apply this to a slightly more complicated example.
+This time we won't attribute real events to the events, we'll just work with symbols.
 
+```
+     A     C
+|----|-----|------>
+    100    ?
+       \     \
+     100 \     \
+           \     \
+      B     A      \
+ |----|-----|---->   \ 300
+     100   200         \
+        \                \
+          \ 50             \
+           B                 C
+ |---------|-----------------|---->
+          200               500
+```
+
+Here we are working with three timebases and we want to know at what time C appears on the first timebase.
+
+Start by obtaining an expression for t1c:
+
+(t3a - t1a) - (t3c - t1c) = Δa13 - Δc13
+(t3a - 100) - (500 - t1c) = Δa13 - 300
+t3a + t1c = Δa13 + 300
+
+We can eliminate t3a and Δa13 by repeating for A and B:
+
+(t3a - t1a) - (t3b - t1b) = Δa13 - Δb13
+(t3a - 100) - (200 - t1b) = Δa13 - Δb13
+t3a + t1b = Δa13 - Δb13 + 300
+
+t1c - t1b = Δb13
+
+
+We can find an expression for t3a using timebases 2 and 3:
+
+(t3a - t2a) - (t3b - t2b) = Δa23 - Δb23
+(t3a - 200) - (200 - 100) = Δa23 - 50
+
+
+We start by considering the first two timebases. Using the equation we get:
+
+(t2a - t1a) - (t2b - t1b) = Δa12 - Δb12
+(200 - 100) - (100 - t1b) = 100 - Δb12
+t1b = 100 - Δb12
+
+Next we'll look at timebases 2 and 3
+
+(t3b - t2b) - (t3c - t2c) = Δb23 - Δc23
+(200 - 100) - (500 - t2c) = 50 - Δc23
+t2c = 450 - Δc23
+
+And finally timebases 1 and 3:
+
+(t2a - t1a) - (t2b - t1b) = Δa12 - Δb12
 
 
 We can see how quickly this becomes complicated.
