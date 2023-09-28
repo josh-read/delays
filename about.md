@@ -101,45 +101,16 @@ This time we won't attribute real events to the events, we'll just work with sym
 
 Here we are working with three timebases and we want to know at what time C appears on the first timebase.
 
-Start by obtaining an expression for t1c:
+We can write nine expressions linking all timebases and events together:
 
-(t3a - t1a) - (t3c - t1c) = Δa13 - Δc13
-(t3a - 100) - (500 - t1c) = Δa13 - 300
-t3a + t1c = Δa13 + 300
+*Write these equations out or do it shorthand*
 
-We can eliminate t3a and Δa13 by repeating for A and B:
+We can then solve the system of equations:
 
-(t3a - t1a) - (t3b - t1b) = Δa13 - Δb13
-(t3a - 100) - (200 - t1b) = Δa13 - Δb13
-t3a + t1b = Δa13 - Δb13 + 300
+*Write as a matrix*
 
-t1c - t1b = Δb13
-
-
-We can find an expression for t3a using timebases 2 and 3:
-
-(t3a - t2a) - (t3b - t2b) = Δa23 - Δb23
-(t3a - 200) - (200 - 100) = Δa23 - 50
-
-
-We start by considering the first two timebases. Using the equation we get:
-
-(t2a - t1a) - (t2b - t1b) = Δa12 - Δb12
-(200 - 100) - (100 - t1b) = 100 - Δb12
-t1b = 100 - Δb12
-
-Next we'll look at timebases 2 and 3
-
-(t3b - t2b) - (t3c - t2c) = Δb23 - Δc23
-(200 - 100) - (500 - t2c) = 50 - Δc23
-t2c = 450 - Δc23
-
-And finally timebases 1 and 3:
-
-(t2a - t1a) - (t2b - t1b) = Δa12 - Δb12
-
-
-We can see how quickly this becomes complicated.
+Even for this relatively simple case, this is really hard work.
+It has a computational complexity of O(n^3)
 
 ### General method
 
