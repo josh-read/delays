@@ -3,8 +3,10 @@
 ## Introduction
 
 Timelines are a common way of visualising a series of events and their chronological relationship to each other.
+
 For example, imagine two events: A and B.
 Event A is a clap of sound while B is a flash of light.
+
 A timeline can be drawn to illustrate these events.
 
 ```
@@ -22,10 +24,15 @@ In a different frame of reference some distance away, the exact same series of e
 ```
 
 We'll assume for this example that light travels instantaneously.
+
 Then why has the time of event B changed?
+
 This is because the origin of the timeline can be different, in this case there is a timebase delay of 100 between the first and the second timeline.
+
 The order of A and B has also changed because the flash of light travels faster than the clap of sound.
+
 In this case we've observed an "information delay" of 200 for the clap of sound from the first frame of reference to the second.
+
 We can make this clear by drawing both timelines together:
 
 ```
