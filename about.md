@@ -63,26 +63,27 @@ In the introductory example, we calculated the information delay for event A bet
 
 We can define some terms and write this more formally:
 
-t1a: Time of event A on timebase 1
-t1b: Time of event B on timebase 1
-t2a: Time of event A on timebase 2
-t2b: Time of event A on timebase 2
-Δa: Information delay between timebase 1 and 2 for event A
-Δb: Information delay between timebase 1 and 2 for event B
+- t1a: Time of event A on timebase 1
+- t1b: Time of event B on timebase 1
+- t2a: Time of event A on timebase 2
+- t2b: Time of event A on timebase 2
+- Δa: Information delay between timebase 1 and 2 for event A
+- Δb: Information delay between timebase 1 and 2 for event B
+
+We can use an intermediate symbol to simplify things.
+- Δ12: Delay between timebases.
+
+- t2a - t1a = Δa + Δ12
+- t2b - t1b = Δb + Δ12
+- t2a - t1a - t2b + t1b = Δa - Δb
+
+We need 5 variables to work out a sixth.
+
+Lets apply this to a slightly more complicated example:
 
 
 
-Now that we know the difference between the timebases, if there was a third event C on either timebase, and we knew the amount of time it takes for the signal to travel from the first frame of reference to the second, we could calculate the time it occurs on the second timebase.
-Similarly, if we have the time of the event on both timebases, we can calculate the time it takes for the signal to travel between the timebases.
-
-To summarise, given three of the following:
-- time on timebase 1
-- time on timebase 2
-- information delay between the timebases
-- delay between the timebases
-You can calculate the fourth.
-
-This method works fine, but quickly becomes complicated with many timebases and is prone to sign errors.
+We can see how quickly this becomes complicated.
 
 ### General method
 
