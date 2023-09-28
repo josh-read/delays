@@ -6,15 +6,16 @@ Timelines are a common way of visualising a series of events and their chronolog
 
 For example:
 ```
-        A        B
+     A     B
 |----|-----|---->
-       100    200
+    100   200
 ```
 Now in a different frame of reference the exact same series of events may appear as:
 ```
-        B         A
-|----|------|---->
-       100     200
+```
+     B     A
+|----|-----|---->
+    100   200
 ```
 How? 
 Well the t0 of each timeline are not nescessarily synchronised. 
