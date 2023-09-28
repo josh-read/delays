@@ -12,7 +12,6 @@ For example:
 ```
 Now in a different frame of reference the exact same series of events may appear as:
 ```
-```
      B     A
 |----|-----|---->
     100   200
