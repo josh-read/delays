@@ -59,9 +59,18 @@ In HEDP experiments...
 
 ### Manual Method
 
-Going back to the first example, if we know the distance between the two observers then we can calculate the difference between the two timebases.
-In this example d=...
-This is an atypical example, normally we would just measure the transit time of a cable or fibre, or the optical path length of light in free space.
+In the introductory example, we calculated the information delay for event A between the two frames of reference.
+
+We can define some terms and write this more formally:
+
+t1a: Time of event A on timebase 1
+t1b: Time of event B on timebase 1
+t2a: Time of event A on timebase 2
+t2b: Time of event A on timebase 2
+Δa: Information delay between timebase 1 and 2 for event A
+Δb: Information delay between timebase 1 and 2 for event B
+
+
 
 Now that we know the difference between the timebases, if there was a third event C on either timebase, and we knew the amount of time it takes for the signal to travel from the first frame of reference to the second, we could calculate the time it occurs on the second timebase.
 Similarly, if we have the time of the event on both timebases, we can calculate the time it takes for the signal to travel between the timebases.
