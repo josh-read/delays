@@ -80,10 +80,18 @@ Each event is linked between timebases in the same way:
 - ② : $t_{B2} - t_{B1} = \Delta t_{B12} + \Delta t_{12}$
 - ① - ② : $(t_{A2} - t_{A1}) - (t_{B2} - t_{B1}) = \Delta t_{A12} - \Delta t_{B12}$
 
-We need 5 variables to work out a sixth.
+We can apply this to the previous example to obtain the information delay for A between
+the timebases.
 
-Lets apply this to a slightly more complicated example.
-This time we won't attribute real events to the events, we'll just work with symbols.
+$$(t_{A2} - t_{A1}) - (t_{B2} - t_{B1}) = \Delta t_{A12} - \Delta t_{B12}$$
+
+$$(200 - 100) - (100 - 200) = \Delta t_{A12} - 0$$
+
+$$\Delta t_{A12} = 200$$
+
+This is simple enough and gives the correct result.
+
+Now, lets look at a more complex example.
 
 ```
      A     C
