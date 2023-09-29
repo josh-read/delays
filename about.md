@@ -63,19 +63,22 @@ In the introductory example, we calculated the information delay for event A bet
 
 We can define some terms and write this more formally:
 
-- t1a: Time of event A on timebase 1
-- t1b: Time of event B on timebase 1
-- t2a: Time of event A on timebase 2
-- t2b: Time of event A on timebase 2
-- Δa12: Information delay between timebase 1 and 2 for event A
-- Δb12: Information delay between timebase 1 and 2 for event B
+- $t_{A1}$: Time of event A on timebase 1
+- $t_{B1}$: Time of event B on timebase 1
+- $t_{A2}$: Time of event A on timebase 2
+- $t_{B2}$: Time of event A on timebase 2
+- $\Delta t_{A12}$: Information delay between timebase 1 and 2 for event A
+- $\Delta t_{B12}$: Information delay between timebase 1 and 2 for event B
 
-We can use an intermediate symbol to simplify things.
-- Δ12: Delay between timebases.
+We can link all of these quantities together in one equation.
+To derive it more easily lets intoduce another term $\Delta t_{12}$,
+which is the delay between the first and second timebase.
+In the previous example this would've been 100.
+Each event is linked between timebases in the same way:
 
-- t2a - t1a = Δa + Δ12
-- t2b - t1b = Δb + Δ12
-- (t2a - t1a) - (t2b - t1b) = Δa12 - Δb12
+- ① : $t_{A2} - t_{A1} = \Delta t_{A12} + \Delta t_{12}$
+- ② : $t_{B2} - t_{B1} = \Delta t_{B12} + \Delta t_{12}$
+- ① - ② : $(t_{A2} - t_{A1}) - (t_{B2} - t_{B1}) = \Delta t_{A12} - \Delta t_{B12}$
 
 We need 5 variables to work out a sixth.
 
