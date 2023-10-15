@@ -114,7 +114,96 @@ Here we are working with three timebases and we want to know at what time C appe
 
 We can write nine expressions linking all timebases and events together:
 
-*Write these equations out or do it shorthand*
+For timebases 1 and 2:
+
+$$(t_{A2} - t_{A1}) - (t_{B2} - t_{B1}) - \Delta t_{A12} + \Delta t_{B12} = 0$$
+$$(t_{A2} - t_{A1}) - (t_{C2} - t_{C1}) - \Delta t_{A12} + \Delta t_{C12} = 0$$
+$$(t_{B2} - t_{B1}) - (t_{C2} - t_{C1}) - \Delta t_{B12} + \Delta t_{C12} = 0$$
+
+1 and 3:
+
+$$(t_{A3} - t_{A1}) - (t_{B3} - t_{B1}) - \Delta t_{A13} + \Delta t_{B13} = 0$$
+$$(t_{A3} - t_{A1}) - (t_{C3} - t_{C1}) - \Delta t_{A13} + \Delta t_{C13} = 0$$
+$$(t_{B3} - t_{B1}) - (t_{C3} - t_{C1}) - \Delta t_{B13} + \Delta t_{C13} = 0$$
+
+2 and 3:
+
+$$(t_{A3} - t_{A2}) - (t_{B3} - t_{B2}) - \Delta t_{A23} + \Delta t_{B23} = 0$$
+$$(t_{A3} - t_{A2}) - (t_{C3} - t_{C2}) - \Delta t_{A23} + \Delta t_{C23} = 0$$
+$$(t_{B3} - t_{B2}) - (t_{C3} - t_{C2}) - \Delta t_{B23} + \Delta t_{C23} = 0$$
+
+We have 18 symbols here, we know the value of 8 of them from the problem definition, and we have 9 equations. We therefore have enough information to get the value of every symbol.
+
+We can express the problem as a matrix:
+
+$$
+\begin{bmatrix}
+-1 & 1 & 0 & 1 & -1 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+-1 & 1 & 0 & 0 & 0 & 0 & 1 & -1 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & -1 & 1 & 0 & 1 & -1 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 1 & 0 & 0 \\
+
+-1 & 0 & 1 & 1 & 0 & -1 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+-1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 & -1 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & -1 & 0 & 1 & 1 & 0 & -1 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 1 & 0 \\
+
+0 & -1 & 1 & 0 & 1 & -1 & 0 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 1 & 0 & 0 & 0 \\
+0 & -1 & 1 & 0 & 0 & 0 & 0 & 1 & -1 & 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 0 & -1 & 1 & 0 & 1 & -1 & 0 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 1 \\
+
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+t_{A1} \\
+t_{A2} \\
+t_{A3} \\
+t_{B1} \\
+t_{B2} \\
+t_{B3} \\
+t_{C1} \\
+t_{C2} \\
+t_{C3} \\
+\Delta t_{A12} \\
+\Delta t_{A13} \\
+\Delta t_{A23} \\
+\Delta t_{B12} \\
+\Delta t_{B13} \\
+\Delta t_{B23} \\
+\Delta t_{C12} \\
+\Delta t_{C13} \\
+\Delta t_{C23} \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+100 \\
+200 \\
+100 \\
+200 \\
+? \\
+500 \\
+100 \\
+50 \\
+300 \\
+\end{bmatrix}
+$$
+
 
 We can then solve the system of equations:
 
