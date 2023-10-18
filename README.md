@@ -28,11 +28,12 @@ Examples of both use cases are presented in the tutorial.
   - User-friendly interface for inputting data and performing calculations.
   - Visualization of timebase conversions.
   - Export functionality for use in Python analysis.
-
+<!--
 - Python Library:
   - Compiled with PyO3 for seamless integration with Python.
   - Provides access to the core library's functionality for experimental analysis.
- 
+-->
+
 ## Getting Started
 
 ### Installation
