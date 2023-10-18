@@ -8,14 +8,14 @@ with a Web App and Python bindings.
 This project aims to help scientists and engineers to manage data on multiple timebases
 and sync event times up to any frame of reference.
 
-This is useful when either of the following is true:
-- The detectors used to collect data can only run for a short amount of time relative to the duration of the experiment.
-- The transit time of information around the system is comparable to the length of the experiment itself.
-These conditions are both typically true for very short lived experiments which are common in HEDP.
+This is useful when the transit time of information from the measurement frame to detectors is comparable to the length of the experiment itself.
+This condition is often true for the very short lived experiments common in high energy density physics.
 
-The tools offered here are designed to target two key scenarios:
-- Setting delay pulse generators to trigger detectors at the right time to record over a time of interest.
-- Syncing data to the experimental frame of reference.
+The tools offered here are designed to target two practical use cases:
+- Setting delay pulse generators to trigger detectors at the right time to record over a time of interest (before the experiment).
+- Syncing recorded data to a common frame of reference (after the experiment).
+
+Examples of both use cases are presented in the tutorial.
 
 ## Features
 
@@ -281,3 +281,9 @@ The web app...
 The python library... and additionally adds plotting functionality
 
 For examples on how to use each of these components, see the tutorial.
+
+## Tutorial
+
+### Calculating trigger delays
+
+### Syncing data to common timebase
