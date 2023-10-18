@@ -276,11 +276,13 @@ The core rust library then just provides an abstraction layer around a graph.
 The abstraction maps the concept of multiple timelines to the graph.
 Rust was chosen because of its speed and safety.
 
-The web app...
+The web app provides a user friendly interface for data entry and delay calculations.
+It is also written in Rust, but compiles to a website backed by web assembly,
+allowing it to be portable while still running at near native speeds.
 
-The python library... and additionally adds plotting functionality
-
-For examples on how to use each of these components, see the tutorial.
+A Python wrapper is also planned which will provide bindings for the core Rust library.
+Since Python is commonly used by scientists, it will allow for the delays
+tool to integrate into existing data analysis pipelines.
 
 ## Tutorial
 
