@@ -91,6 +91,8 @@ $$\Delta t_{A12} = 200$$
 
 This is simple enough and gives the correct result.
 
+### General method
+
 Now, lets look at a more complex example.
 
 ```
@@ -110,9 +112,9 @@ Now, lets look at a more complex example.
           200               500
 ```
 
-Here we are working with three timebases and we want to know at what time C appears on the first timebase.
+Here we are working with three timebases and we want to know at what time C appears on the first timebase. Even for this still relatively simple case, this is really hard work.
 
-We can write nine expressions linking all timebases and events together:
+<!-- We can write nine expressions linking all timebases and events together:
 
 For timebases 1 and 2:
 
@@ -202,19 +204,17 @@ t_{C3} \\
 50 \\
 300 \\
 \end{bmatrix}
-$$
+$$ -->
 
+Fortunately there is an easier way than defining symbols and deriving relationships between each event and timebase. Instead, we can see from the graph that there is a path between $t_{C1}$ and $t_{A1}$ which *is* referenced to timebase 1. By recognising that the time of each event is equivalent to a delay from the origin of each timebase, we can just sum the delays from $t_{C1}$ and $t_{01}$.
 
-We can then solve the system of equations:
+The sign of the delays is extremely important here, and it this method is error prone when calculating it manually as we do here:
 
-*Write as a matrix*
+$$t_{C1} \rightarrow t_{C3} \rightarrow t_{B3} \rightarrow t_{B2} \rightarrow t_{A2} \rightarrow t_{A1}$$
 
-Even for this relatively simple case, this is really hard work.
-It has a computational complexity of O(n^3)
+$$-300 + 300 + 50 -100 + 100 + 100 = 150$$
 
-### General method
-
-Fortunately there is a more general method for these calculations by representing everything as a graph (network) of events connected by delays.
+We can formalise this approach by describing the system as a graph (network) of events connected by delays.
 Each unique combination of event and timebase is represented by a node in the graph.
 Each delay is represented by an edge whose weight is equal to the length of the delay.
 Times of events are represented as a delay between a t0 node and the event node on the same timebase.
@@ -229,12 +229,12 @@ We still require the same amount of information about either timebase offsets, d
 ## Under the hood
 
 Graph traversal algorthms are efficient and scale well.
-In addition graph theory gives us some useful concepts for figuring out what we need to measure to get the values we want.
+In addition, graph theory gives us some useful concepts for figuring out what we need to measure to get the values we want.
 There are great graph libraries in almost every language which means theres well tested and optimised stuff already existing rather than having to develop new algorithms from scratch.
 
 The core rust library then just provides an abstraction layer around a graph.
 The abstraction maps the concept of multiple timelines to the graph.
-Rust was chosen because of its speed and safety
+Rust was chosen because of its speed and safety.
 
 The web app...
 
